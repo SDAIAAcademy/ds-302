@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-ax="deck" data-track="data-science">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 4 · Decide and review · Online Experiments and A/B Testing</title>
+<meta name="generator" content="SDAIA Academy engine 1.0.0">
+<link rel="icon" href="../_engine/icon.svg">
+<link rel="alternate" type="text/markdown" href="day4.md">
+<link rel="describedby" href="../llms.txt">
+<link rel="stylesheet" href="../_engine/academy.css">
+</head>
+<body>
+<div class="deck" data-course="Online Experiments and A/B Testing" data-track="data-science" data-day="Day 4">
+<section class="slide title" id="title" data-auto="title" data-label="Welcome" data-n="1">
+  <div class="kicker">SDAIA Academy · Online Experiments and A/B Testing</div>
+  <h1>Decide and review</h1>
+  <p class="lead mt">Day 4: From numbers to a decision: AI-feature tests, many segments, the recommendation and the review board</p>
+  <div class="meta"><span class="track">Data Science Track</span><span>4 teaching days + capstone day</span><span>4 sessions · 4 labs</span><span>DS-302</span></div>
+  <aside class="notes"><p>Open with the question every test ends on: launch, iterate or stop? Three days built the numbers; today is about deciding with them, and about the faults a review board must catch before it reads any result. Ask who in the room has had to defend a test result to a manager who wanted a yes.</p></aside>
+</section>
+
+<section class="slide" id="agenda" data-auto="agenda" data-label="Agenda" data-n="2">
+  <div class="kicker">Today</div>
+  <h2>Decide and review</h2>
+  <div class="agenda"><div class="item"><div><b>Session 1 · Testing AI features</b><small>An AI feature adds latency, cost and new harms; the review board stops a test whose harm guardrail worsens</small></div></div><div class="item"><div><b>Session 2 · Many segments</b><small>Twenty segments at 5% each will show false wins; control the family or the false discovery rate</small></div></div><div class="item"><div><b>Session 3 · Writing the recommendation</b><small>One page: the decision, the effect with its interval, the guardrails, the risks, the rule that decided</small></div></div><div class="item"><div><b>Session 4 · The review board</b><small>A board reads write-ups for faults before it reads their results, and decides launch, iterate or stop</small></div></div></div>
+  <aside class="notes"><p>Session 1 is an AI-feature test in which harm overrides a real lift. Session 2 is twenty segments. Session 3 writes the one page for T-101. Session 4 sits on the review board and chooses the capstone change. Every lab reads logs or simulations; nothing calls a model.</p></aside>
+</section>
+
+<section class="slide" id="review-day3" data-lo="LO5" data-label="Review" data-n="3">
+  <div class="kicker">Review of Day 3</div>
+  <h2>Which design measures the courier-priority rule as it would run for everyone?</h2>
+  <div class="quiz" data-type="single" data-lo="LO5" data-id="review-day3-q1">
+    <p class="lead">Joud wants the effect of giving priority to orders under a new dispatch rule, as it would be if every order in a city used it. Customer randomisation showed a 10.4-minute gain. Which design answers her question?</p>
+    <div class="opts">
+      <div class="opt" data-why="Keeps the shared couriers that caused the transfer of waiting between arms" data-k="A">Customer randomisation with twice the traffic</div>
+      <div class="opt" data-why="Moves the unit to the order, which shares couriers even more tightly" data-k="B">Order randomisation within each customer</div>
+      <div class="opt" data-ok data-k="C">A city-by-hour switchback, analysed over blocks</div>
+      <div class="opt" data-why="Corrects for many metrics, not for interference between units" data-k="D">Customer randomisation with a Bonferroni correction</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> In a block every order runs the same rule, so the couriers are not shared between arms and the difference between blocks estimates the global effect.</div>
+  </div>
+  <aside class="notes"><p>Answer: C. The simulator's global effect was 1.8 minutes; the switchback recovered about 1.5 with its weighting. Remind the room that the switchback pays in power.</p></aside>
+</section>
+
+<!-- ======================= SESSION 1 ======================= -->
+<section class="slide section" id="s1" data-auto="section" data-session="1" data-n="4">
+  <div class="kicker">Session 1</div>
+  <h1>Testing AI features</h1>
+  <ul class="bullets outcomes"><li>Analyse an AI-feature test with latency, cost and harm guardrails</li><li>Detect novelty decay in a weekly effect</li><li>Apply a decision rule in which harm overrides the primary metric</li></ul>
+  <div class="sess-no">01</div>
+</section>
+
+<section class="slide" id="ai-features-differ" data-lo="LO4" data-label="AI features" data-n="5" data-session="1">
+  <div class="kicker">What changes when the treatment is a model</div>
+  <h2>An AI feature brings three guardrails a button never needed</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>Latency</h4><p class="small mb0">A model answers in seconds, not milliseconds; the tail is where customers leave.</p></div>
+    <div class="card c-amber"><h4>Cost</h4><p class="small mb0">Every call is paid for; cost per conversation is a metric with a limit.</p></div>
+    <div class="card c-coral"><h4>Harm</h4><p class="small mb0">A fluent answer can be wrong: an ingredient that is not there, an allergen missed.</p></div>
+  </div>
+  <div class="callout note mt"><b>National reference.</b> The SDAIA Generative AI Guidelines list misinformation among the risks and ask for monitoring and human supervision of a deployed system.</div>
+  <aside class="notes"><p>The guidelines (Government and Public editions, course sources) describe risks including misinformation and inaccurate output, and expect monitoring. A harm guardrail in a pre-registration is how a test turns that expectation into a number with a limit. Ask: which of your AI features has a harm you could count?</p></aside>
+</section>
+
+<section class="slide" id="luqma-test" data-lo="LO4" data-label="T-401" data-n="6" data-session="1">
+  <div class="kicker">Lab 4.1 · the case</div>
+  <h2>T-401: Luqma replaces the help menu for half of Sufrah's customers</h2>
+  <div class="cols cols-2">
+    <ul class="bullets small">
+      <li>60,203 customers with Luqma, 59,797 with the old help menu, four weeks.</li>
+      <li>Primary: orders per customer over the four weeks.</li>
+      <li>Guardrails: p95 response time at most 5 s, cost per conversation at most 0.12 SAR, complaints at most +1.0 per 1,000 orders.</li>
+      <li><b>Harm guardrail:</b> wrong ingredient or allergen complaints at most +0.3 per 1,000 orders, judged on the upper bound.</li>
+    </ul>
+    <div class="card c-navy"><h4>The written rule</h4><p class="small mb0">Stop if the harm guardrail fails. Otherwise launch if the primary interval is above zero and every guardrail holds; iterate if a non-harm guardrail fails.</p></div>
+  </div>
+  <aside class="notes"><p>The rule was written before the test, which is the point: nobody can argue the harm away after seeing a lift. Numbers on the next slides are from the solution run of Lab 4.1, full mode (120,000 customers).</p></aside>
+</section>
+
+<section class="slide" id="luqma-results" data-lo="LO4" data-label="The results" data-n="7" data-session="1">
+  <div class="kicker">Lab 4.1, steps 1 to 3</div>
+  <h2>Customers order more, and wrong answers about food rise</h2>
+  <table class="t small">
+    <tr><th>Metric</th><th class="num">Old help menu</th><th class="num">Luqma</th><th>Against the plan</th></tr>
+    <tr><td>Orders per customer, 4 weeks</td><td class="num">5.08</td><td class="num">5.19 (+2.1%)</td><td>difference +0.105, interval 0.034 to 0.176: above zero</td></tr>
+    <tr><td>p95 response time</td><td class="num">0.98 s</td><td class="num">3.94 s</td><td>holds (limit 5 s)</td></tr>
+    <tr><td>Cost per conversation</td><td class="num">0.00 SAR</td><td class="num">0.07 SAR</td><td>holds (limit 0.12)</td></tr>
+    <tr><td>Complaints per 1,000 orders</td><td class="num">5.58</td><td class="num">6.03</td><td>upper bound +0.83: holds</td></tr>
+    <tr class="hl"><td>Wrong ingredient or allergen, per 1,000</td><td class="num">1.34</td><td class="num">2.15</td><td>upper bound +1.02: <b>fails</b> (limit +0.3)</td></tr>
+  </table>
+  <aside class="notes"><p>Complaint rates are ratio metrics over customers, so Lab 4.1 uses the delta method of Lab 2.3. Point out escalations: 19.1% of help-menu contacts reached a human agent, 11.0% of Luqma conversations. Cheaper, and also the route by which a wrong answer reaches a customer with no person in between.</p></aside>
+</section>
+
+<section class="slide" id="novelty" data-lo="LO4" data-label="Novelty" data-n="8" data-session="1">
+  <div class="kicker">Lab 4.1, step 4</div>
+  <h2>The lift fades week by week: novelty, not a settled effect</h2>
+  <div class="bars">
+    <div class="row"><span>Week 1</span><div class="bar c-teal" style="--w:90%"></div><span class="val">+5.8%</span></div>
+    <div class="row"><span>Week 2</span><div class="bar c-teal" style="--w:39%"></div><span class="val">+2.5%</span></div>
+    <div class="row"><span>Week 3</span><div class="bar c-amber" style="--w:9%"></div><span class="val">+0.5%</span></div>
+    <div class="row"><span>Week 4</span><div class="bar c-coral" style="--w:2%"></div><span class="val">-0.5%</span></div>
+  </div>
+  <div class="callout warn mt"><b>What goes wrong.</b> Reporting the four-week average, +2.1%, as the long-run effect. Weeks 3 and 4 have intervals that include zero.</div>
+  <aside class="notes"><p>Customers try the new thing, then go back to their habits. The settled effect is what the last weeks show. A longer test, or a holdout kept after launch, measures it. Week 4's interval is -2.2% to +1.1%.</p></aside>
+</section>
+
+<section class="slide" id="harm-overrides" data-lo="LO4" data-label="Harm first" data-n="9" data-session="1">
+  <div class="kicker">Lab 4.1, step 5</div>
+  <h2>The rule says stop, and it would say so with any lift</h2>
+  <div class="flow">
+    <div class="step c-coral"><b>1 · Harm guardrail</b>Fails: +0.81 per 1,000, upper bound +1.02</div>
+    <div class="arrow frag" data-frag="b">→</div><div class="step c-navy frag" data-frag="b"><b>2 · The rule</b>Stop, before reading the primary</div>
+    <div class="arrow frag" data-frag="c">→</div><div class="step c-teal frag" data-frag="c"><b>3 · What next</b>Fix the cause: capstone change C2 adds an allergen checker</div>
+  </div>
+  <div class="callout tip mt frag"><b>Takeaway.</b> A harm guardrail is judged on its upper bound: the test must show the harm is below the limit, not merely fail to show it is above.</div>
+  <aside class="notes"><p>Press once per step. A participant will say the lift is real; agree, and point at the rule. Stop does not mean never: it means this version does not ship. C2 in the capstone is the same assistant with an allergen checker.</p></aside>
+</section>
+
+<section class="slide" id="check-harm" data-lo="LO4" data-n="10" data-session="1">
+  <div class="kicker">Checkpoint</div>
+  <h2>The harm estimate is small. Is that enough?</h2>
+  <div class="quiz" data-type="single" data-lo="LO4" data-id="check-harm-q1">
+    <p class="lead">A new AI menu search raises allergen complaints by +0.10 per 1,000 orders, 95% interval -0.20 to +0.40. The pre-registered limit is +0.30 on the upper bound. What does the rule say?</p>
+    <div class="opts">
+      <div class="opt" data-why="Reads a difference that is not significant as evidence of no harm" data-k="A">It holds: the difference is not significantly above zero</div>
+      <div class="opt" data-ok data-k="B">It fails: the upper bound, +0.40, is above the limit</div>
+      <div class="opt" data-why="Judges harm on the estimate, which lets a noisy test pass" data-k="C">It holds: the estimate, +0.10, is below the limit</div>
+      <div class="opt" data-why="Thinks a test can never judge harm, when the upper bound does exactly that" data-k="D">It cannot be judged without a longer test</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> The test must show the harm is below the limit. An interval that reaches +0.40 has not shown that; a larger test might.</div>
+  </div>
+  <aside class="notes"><p>Answer: B. Connect to non-inferiority from Day 1, session 3: the same logic, applied to harm.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-4-1" data-auto="lab" data-lab="4.1" data-label="Lab 4.1" data-n="11" data-session="1">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 4.1 · 25 min</div><h2>The Luqma chat-assistant test</h2><p class="lead small">Analyse a chat-assistant test with latency, cost and complaint guardrails, check the lift week by week and apply the harm rule.</p><a class="nb" href="../labs/D4_1_chat_assistant_test.ipynb">D4_1_chat_assistant_test.ipynb</a></div><ul class="checklist"><li>The primary metric with its interval <span class="min">5 min</span></li><li>Latency and cost guardrails <span class="min">5 min</span></li><li>Complaints and wrong-information complaints <span class="min">6 min</span></li><li>The lift by week: novelty <span class="min">5 min</span></li><li>The decision and its reason <span class="min">4 min</span></li><li class="stretch">✱ Stretch: Find the city where the harm is largest and say what you would ask the Luqma team</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. The usual slip is computing complaint rates over orders as independent rows: the interval comes out too narrow. Quick mode (30,000 customers) gives a primary interval that may include zero; the lab checks only that the lift is positive there and says so. No model is called: the conversations are logs.</p></aside>
+</section>
+
+<!-- ======================= SESSION 2 ======================= -->
+<section class="slide section" id="s2" data-auto="section" data-session="2" data-n="12">
+  <div class="kicker">Session 2</div>
+  <h1>Many segments</h1>
+  <ul class="bullets outcomes"><li>Compute how many false wins 20 uncorrected tests produce</li><li>Apply Holm and Benjamini-Hochberg corrections</li><li>Report the segments that survive and what that means for the decision</li></ul>
+  <div class="sess-no">02</div>
+</section>
+
+<section class="slide" id="twenty-segments" data-lo="LO6" data-label="Twenty cuts" data-n="13" data-session="2">
+  <div class="kicker">Lab 4.2 · the case</div>
+  <h2>Twenty cuisine segments, four of them "significant"</h2>
+  <div class="cols cols-2">
+    <ul class="bullets small">
+      <li>T-205 added photos to menus. Overall: a small lift.</li>
+      <li>The team cut the result by the cuisine of each customer's favourite restaurant: 20 segments.</li>
+      <li>Below 0.05: Mandi (p = 0.00001), Coffee (0.001), Indian (0.040, a drop), Desserts (0.049).</li>
+    </ul>
+    <div class="stat"><div class="big">64%</div><div class="lbl">of 20-test analyses with no effect anywhere show at least one p below 0.05; 1.0 false win on average</div></div>
+  </div>
+  <aside class="notes"><p>The 64% is from Lab 4.2's simulation, 20,000 sets of twenty tests, and matches 1 - 0.95²⁰ because the segments are independent. Ask: in your team's dashboards, how many cuts does a typical result get?</p></aside>
+</section>
+
+<section class="slide" id="fwer-vs-fdr" data-lo="LO6" data-label="Two targets" data-n="14" data-session="2">
+  <div class="kicker">Two error rates to control</div>
+  <h2>Control the chance of any false win, or the share of false wins you report</h2>
+  <div class="cols cols-2">
+    <div class="card c-navy"><h4>Family-wise error: Bonferroni, Holm</h4><p class="small mb0">The chance of even one false win stays at 5%. Bonferroni tests each p against 0.05 / 20 = 0.0025; Holm steps down from the smallest p and never rejects less.</p></div>
+    <div class="card c-purple"><h4>False discovery rate: Benjamini-Hochberg</h4><p class="small mb0">Among the segments you report, the expected share of false ones stays at 5%. Sort the p-values; keep the largest k with p<sub>(k)</sub> ≤ 0.05 k / 20.</p></div>
+  </div>
+  <div class="callout note mt"><b>On the platforms.</b> GrowthBook's documentation offers Holm-Bonferroni and Benjamini-Hochberg corrections for many metrics or many variations.</div>
+  <aside class="notes"><p>Use FWER when one false claim is costly, as in a launch claim; FDR when you are exploring a list and can accept a stated share of false leads. A single pre-registered primary metric needs no correction.</p></aside>
+</section>
+
+<section class="slide" id="what-survives" data-lo="LO6" data-label="What survives" data-n="15" data-session="2">
+  <div class="kicker">Lab 4.2, steps 3 to 5</div>
+  <h2>Two segments survive every correction; two are chance</h2>
+  <table class="t small">
+    <tr><th>Segment</th><th class="num">Difference</th><th class="num">p</th><th>Bonferroni</th><th>Holm</th><th>Benjamini-Hochberg</th></tr>
+    <tr class="hl"><td>Mandi</td><td class="num">+0.449</td><td class="num">0.00001</td><td>kept</td><td>kept</td><td>kept</td></tr>
+    <tr class="hl"><td>Coffee</td><td class="num">+0.317</td><td class="num">0.0010</td><td>kept</td><td>kept</td><td>kept</td></tr>
+    <tr><td>Indian</td><td class="num">-0.145</td><td class="num">0.040</td><td>dropped</td><td>dropped</td><td>dropped</td></tr>
+    <tr><td>Desserts</td><td class="num">+0.137</td><td class="num">0.049</td><td>dropped</td><td>dropped</td><td>dropped</td></tr>
+  </table>
+  <div class="callout tip mt"><b>What a survivor earns.</b> A new test, pre-registered on that segment. Not a launch.</div>
+  <aside class="notes"><p>The simulator planted real effects in Mandi and Coffee only, so the corrections found the truth here; in real data you never know. Ask the room what they would say to a product manager who wants to launch photos for Desserts only.</p></aside>
+</section>
+
+<section class="slide" id="check-segments" data-lo="LO6" data-n="16" data-session="2">
+  <div class="kicker">Checkpoint</div>
+  <h2>A segment with p = 0.01</h2>
+  <div class="quiz" data-type="single" data-lo="LO6" data-id="check-segments-q1">
+    <p class="lead">Ruba cut a test into 20 city-and-platform segments. One, Abha on Android, has p = 0.01; the other nineteen are above 0.2. With Benjamini-Hochberg at 5%, what does she report?</p>
+    <div class="opts">
+      <div class="opt" data-why="Applies the single-test threshold to one test chosen from twenty" data-k="A">A win in Abha on Android, because 0.01 is below 0.05</div>
+      <div class="opt" data-why="Thinks the false discovery rate is the same as the p-value of the best segment" data-k="B">A win with a 1% chance of being false</div>
+      <div class="opt" data-why="Confuses the smallest-p threshold with a ban on segments" data-k="C">That segment analysis is never allowed</div>
+      <div class="opt" data-ok data-k="D">No segment survives: 0.01 is above its threshold, 0.05 × 1 / 20 = 0.0025</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> Benjamini-Hochberg compares the k-th smallest p-value with 0.05 × k / 20. The smallest, 0.01, is above 0.0025, and no larger p-value meets its own threshold (the last one is 0.05), so nothing is reported.</div>
+  </div>
+  <aside class="notes"><p>Answer: D. The rank-1 threshold of Benjamini-Hochberg equals Bonferroni's; the procedures differ only from rank 2 onward. Had a second segment shown p = 0.004, both would survive (0.004 is below 0.05 × 2 / 20 = 0.005): the rule keeps every rank up to the largest that passes.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-4-2" data-auto="lab" data-lab="4.2" data-label="Lab 4.2" data-n="17" data-session="2">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 4.2 · 25 min</div><h2>Twenty segment results, corrected</h2><p class="lead small">Correct 20 segment results for false discoveries and report what survives.</p><a class="nb" href="../labs/D4_2_segment_fdr.ipynb">D4_2_segment_fdr.ipynb</a></div><ul class="checklist"><li>Twenty z-tests from the segment table <span class="min">5 min</span></li><li>How many false wins by chance: simulate <span class="min">5 min</span></li><li>Bonferroni and Holm <span class="min">5 min</span></li><li>Benjamini-Hochberg <span class="min">5 min</span></li><li>What survives, in two sentences <span class="min">5 min</span></li><li class="stretch">✱ Stretch: Shrink the segment effects toward the overall effect and compare</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. Participants write Benjamini-Hochberg by hand and the lab compares it with statsmodels; the common bug is keeping only the ranks that pass rather than all ranks up to the largest that passes. The segment table is given, so the lab starts on its own.</p></aside>
+</section>
+
+<!-- ======================= SESSION 3 ======================= -->
+<section class="slide section" id="s3" data-auto="section" data-session="3" data-n="18">
+  <div class="kicker">Session 3</div>
+  <h1>Writing the recommendation</h1>
+  <ul class="bullets outcomes"><li>Compute every number the pre-registration asks for</li><li>Apply the written decision rule without exception</li><li>Write a one-page recommendation a decision maker can act on</li></ul>
+  <div class="sess-no">03</div>
+</section>
+
+<section class="slide" id="one-page" data-lo="LO6" data-label="One page" data-n="19" data-session="3">
+  <div class="kicker">The recommendation</div>
+  <h2>One page, in the order the reader decides</h2>
+  <div class="flow">
+    <div class="step c-navy"><b>1 · Decision</b>Launch, iterate or stop, and why, in two sentences</div>
+    <div class="arrow frag" data-frag="b">→</div><div class="step c-teal frag" data-frag="b"><b>2 · Effect</b>With its interval, in units a manager uses</div>
+    <div class="arrow frag" data-frag="c">→</div><div class="step c-amber frag" data-frag="c"><b>3 · Guardrails</b>Each against its pre-registered limit</div>
+    <div class="arrow frag" data-frag="d">→</div><div class="step c-coral frag" data-frag="d"><b>4 · Risks, next step</b>What would change the decision; who does what</div>
+  </div>
+  <div class="callout tip mt frag"><b>Takeaway.</b> The rule that decided is the pre-registered one, applied literally.</div>
+  <aside class="notes"><p>Press once per step. The page is not a report of everything computed; it is the case for one decision. Lab 4.3 caps it at 450 words.</p></aside>
+</section>
+
+<section class="slide" id="t101-numbers" data-lo="LO6" data-label="T-101" data-n="20" data-session="3">
+  <div class="kicker">Lab 4.3, steps 2 and 3</div>
+  <h2>T-101: a clear lift, and latency beyond the limit</h2>
+  <div class="cols cols-2">
+    <div class="stat"><div class="big">+3.5%</div><div class="lbl">orders per triggered customer, +0.226 (95% interval 0.179 to 0.273), adjusted with 28 pre-period days</div></div>
+    <table class="t small">
+      <tr><th>Guardrail</th><th class="num">Value</th><th>Limit</th></tr>
+      <tr class="hl"><td>Search p95 latency, difference</td><td class="num">+405 ms</td><td>at most 300: <b>fails</b></td></tr>
+      <tr><td>Inference cost per 1,000 searches</td><td class="num">5.80 SAR</td><td>at most 8.0: holds</td></tr>
+      <tr><td>Complaints per 1,000, upper bound</td><td class="num">+0.36</td><td>at most 1.0: holds</td></tr>
+      <tr><td>Revenue, lower bound, relative</td><td class="num">+1.6%</td><td>at least -1%: holds</td></tr>
+    </table>
+  </div>
+  <aside class="notes"><p>Sample ratio: 100,417 against 99,583, p = 0.062, so the split holds. The estimators are given in the lab (CUPED from Lab 2.2, the delta method from Lab 2.3); the work is applying the pre-registration. Lab 4.3 always uses the full stream, in quick mode too, because the decision depends on it.</p></aside>
+</section>
+
+<section class="slide" id="t101-decision" data-lo="LO6" data-label="The decision" data-n="21" data-session="3">
+  <div class="kicker">Lab 4.3, step 4</div>
+  <h2>The rule says iterate: a non-harm guardrail failed</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="decide()"><code class="language-python"><span class="hljs-keyword">if</span> primary[<span class="hljs-string">&quot;lo&quot;</span>] &lt;= <span class="hljs-number">0</span> <span class="hljs-keyword">or</span> harm_failed:
+    <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;stop&quot;</span>
+<span class="hljs-keyword">return</span> <span class="hljs-string">&quot;launch&quot;</span> <span class="hljs-keyword">if</span> all_hold <span class="hljs-keyword">else</span> <span class="hljs-string">&quot;iterate&quot;</span></code></pre>
+    <ul class="bullets small">
+      <li>The primary interval is far above zero: not a stop.</li>
+      <li>Latency is not the harm guardrail: not a stop.</li>
+      <li>One guardrail failed: not a launch.</li>
+      <li>Next step: cut p95 latency by at least 105 ms, then a 14-day confirmation.</li>
+    </ul>
+  </div>
+  <div class="callout warn mt"><b>What goes wrong.</b> "The lift is so large that 405 ms is fine." That argument belonged in the pre-registration; after the test it is a moved goalpost.</div>
+  <aside class="notes"><p>Yazeed owns the next step. Ask the room: if the faster version loses half the lift, what decides? The same rule, in a new pre-registration.</p></aside>
+</section>
+
+<section class="slide" id="check-page" data-lo="LO6" data-n="22" data-session="3">
+  <div class="kicker">Checkpoint</div>
+  <h2>What goes first on the page?</h2>
+  <div class="quiz" data-type="single" data-lo="LO6" data-id="check-page-q1">
+    <p class="lead">Rawan's board reads one page per test. Ruba's draft for T-101 opens with the method, then the data, then the effect, and ends with the decision. What should she change?</p>
+    <div class="opts">
+      <div class="opt" data-ok data-k="A">Put the decision and its reason first; the evidence follows</div>
+      <div class="opt" data-why="Moves detail up when the reader needs the conclusion first" data-k="B">Put the guardrail table first, because it decided</div>
+      <div class="opt" data-why="Hides the uncertainty the board needs to judge the decision" data-k="C">Drop the interval and keep the point estimate</div>
+      <div class="opt" data-why="Adds length when the problem is the order" data-k="D">Add a methods appendix to the page</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> The reader decides; the page leads with the decision so every number after it can be checked against it.</div>
+  </div>
+  <aside class="notes"><p>Answer: A. The method belongs in the pre-registration, linked from the page.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-4-3" data-auto="lab" data-lab="4.3" data-label="Lab 4.3" data-n="23" data-session="3">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 4.3 · 25 min</div><h2>A one-page recommendation for T-101</h2><p class="lead small">Draft a one-page launch recommendation for the AI-ranked search test with effect, interval and guardrails, from its pre-registration.</p><a class="nb" href="../labs/D4_3_launch_recommendation.ipynb">D4_3_launch_recommendation.ipynb</a></div><ul class="checklist"><li>Read the pre-registration <span class="min">3 min</span></li><li>The primary effect, adjusted, with its interval <span class="min">6 min</span></li><li>The four guardrails against their thresholds <span class="min">6 min</span></li><li>Apply the decision rule <span class="min">4 min</span></li><li>Write and save the one page <span class="min">6 min</span></li><li class="stretch">✱ Stretch: Add the effect in Riyadh only and say why it does not change the decision</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. An assistant may comment on the draft; the numbers and the decision are the participant's. Watch for pages that argue for launch: send them back to the rule. The page is saved as artifacts/T101_recommendation.md.</p></aside>
+</section>
+
+<!-- ======================= SESSION 4 ======================= -->
+<section class="slide section" id="s4" data-auto="section" data-session="4" data-n="24">
+  <div class="kicker">Session 4</div>
+  <h1>The review board</h1>
+  <ul class="bullets outcomes"><li>Check a write-up for sample ratio mismatch, peeking and novelty</li><li>Decide launch, iterate or stop with a stated reason</li><li>Choose and scope the capstone change</li></ul>
+  <div class="sess-no">04</div>
+</section>
+
+<section class="slide" id="board-checklist" data-lo="LO6" data-label="The checklist" data-n="25" data-session="4">
+  <div class="kicker">The review board</div>
+  <h2>Read for faults before you read the result</h2>
+  <ol class="bullets small">
+    <li>Did the split work? Sample ratio (Lab 1.2).</li>
+    <li>Is the analysis the pre-registered one, at the planned time? (Labs 1.4, 3.1)</li>
+    <li>Is the effect settled, or fading? (Lab 4.1)</li>
+    <li>Did every guardrail hold, the harm guardrail above all? (Labs 1.3, 4.1)</li>
+    <li>Was a segment or a metric picked after the fact? (Lab 4.2)</li>
+  </ol>
+  <div class="callout note mt"><b>Why this order.</b> A fault early in the list makes every later number suspect.</div>
+  <aside class="notes"><p>Each item is a lab of this course. Five write-ups, W1 to W5, all end "we recommend launch"; each has one fault or none. The board's own log is in data/reference, opened only after the participant has decided.</p></aside>
+</section>
+
+<section class="slide" id="w1-w2" data-lo="LO6" data-label="W1 and W2" data-n="26" data-session="4">
+  <div class="kicker">Lab 4.4, steps 2 and 3</div>
+  <h2>W1 fails on the split; W2 fails on the timing</h2>
+  <div class="cols cols-2">
+    <div class="card c-coral"><h4>W1 · One-tap reorder banner</h4><p class="small mb0">+2.1%, interval 0.9% to 3.3%. Users 50,912 against 49,088: chi-square p = 8 × 10⁻⁹. <b>Iterate:</b> find the cause, rerun.</p></div>
+    <div class="card c-coral"><h4>W2 · Dish of the day carousel</h4><p class="small mb0">Stopped on day 9 at z = 2.19; the planned boundary there was 3.47. The planned day-28 analysis: z = 0.27. <b>Stop:</b> no effect.</p></div>
+  </div>
+  <aside class="notes"><p>W1's interval looks clean, which is the trap: a sample ratio mismatch means the arms differ in who is in them. W2 is the peeking of Day 3; the plan's boundaries are given in the lab. Iterate for W1 because the idea may still work; stop for W2 because the planned test found nothing.</p></aside>
+</section>
+
+<section class="slide" id="choose-capstone" data-lo="LO4" data-label="Your capstone" data-n="27" data-session="4">
+  <div class="kicker">Lab 4.4, step 5</div>
+  <h2>Choose the capstone change, knowing what 28 days can detect</h2>
+  <table class="t small">
+    <tr><th>Change</th><th class="num">Customers</th><th class="num">Detectable lift, raw</th><th class="num">With pre-period</th></tr>
+    <tr><td>C1 · AI-written dish descriptions</td><td class="num">160,000</td><td class="num">1.7%</td><td class="num">0.85%</td></tr>
+    <tr><td>C2 · Luqma with an allergen checker</td><td class="num">120,000</td><td class="num">2.0%</td><td class="num">0.98%</td></tr>
+    <tr><td>C3 · AI-ranked restaurant list</td><td class="num">200,000</td><td class="num">1.5%</td><td class="num">0.76%</td></tr>
+  </table>
+  <p class="small mt">5% two-sided, 80% power, orders per customer over 28 days; the pre-period correlation is about 0.87.</p>
+  <aside class="notes"><p>From the solution run of Lab 4.4, full mode. Adjustment halves the detectable lift because the variance shrinks by 1 - ρ², about 0.25. Each change has its own harm guardrail; C3's is fairness to small restaurants, which is not a complaint count and needs its own definition.</p></aside>
+</section>
+
+<section class="slide" id="check-board" data-lo="LO6" data-n="28" data-session="4">
+  <div class="kicker">Checkpoint</div>
+  <h2>A write-up with a fading lift</h2>
+  <div class="quiz" data-type="single" data-lo="LO6" data-id="check-board-q1">
+    <p class="lead">A write-up reports +3.0% over four weeks, interval 1.6% to 4.4%, and recommends launch. Its weekly lifts are 7.1%, 2.8%, 0.9% and 0.2%, each with a standard error of 0.8 points. What does the board decide?</p>
+    <div class="opts">
+      <div class="opt" data-why="Takes the four-week average as the settled effect when the weekly lifts show it fading" data-k="A">Launch: the four-week interval is above zero</div>
+      <div class="opt" data-why="Stops for a fault that is not harm; the idea may still have a small settled effect" data-k="B">Stop: the result is novelty, so there is no effect</div>
+      <div class="opt" data-ok data-k="C">Iterate: run longer, because the settled effect is not shown to be above zero</div>
+      <div class="opt" data-why="Applies a segment correction to a question about time" data-k="D">Apply Benjamini-Hochberg to the four weeks</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> Week 4's interval, 0.2% ± 1.6 points, includes zero; the board needs the settled effect before a launch.</div>
+  </div>
+  <aside class="notes"><p>Answer: C. This is W3, the first stretch write-up of Lab 4.4; participants who reach the stretch will recognise it.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-4-4" data-auto="lab" data-lab="4.4" data-label="Lab 4.4" data-n="29" data-session="4">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 4.4 · 25 min</div><h2>Two write-ups, and the capstone change</h2><p class="lead small">Decide two seeded write-ups, score the review log against the reference decisions, and choose the capstone change.</p><a class="nb" href="../labs/D4_4_review_board.ipynb">D4_4_review_board.ipynb</a></div><ul class="checklist"><li>The review checklist <span class="min">3 min</span></li><li>W1: check, decide, log <span class="min">6 min</span></li><li>W2: check, decide, log <span class="min">6 min</span></li><li>Score the log <span class="min">3 min</span></li><li>Choose the capstone change and its primary metric <span class="min">7 min</span></li><li class="stretch">✱ Stretch: Decide W3, W4 and W5</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. The review log, artifacts/review_log.json, is LO6's evidence, scored against the board's log. The capstone choice, artifacts/capstone_choice.json, starts the capstone. Participants who finish decide W3 to W5 in the stretch: W3 iterate (novelty), W4 launch (clean), W5 stop (courier earnings beyond the limit).</p></aside>
+</section>
+
+<section class="slide" id="wrap-up" data-label="Wrap-up" data-n="30" data-session="4">
+  <div class="kicker">Day 4</div>
+  <h2>Three things to keep</h2>
+  <div class="cols cols-3">
+    <div class="card c-coral"><h4>Harm decides first</h4><p class="small mb0">Luqma's lift was real; the wrong-information guardrail stopped it.</p></div>
+    <div class="card c-purple"><h4>Correct the cuts</h4><p class="small mb0">Of four "significant" segments, two survived.</p></div>
+    <div class="card c-teal"><h4>Faults before results</h4><p class="small mb0">Sample ratio, timing, novelty, guardrails: then the effect.</p></div>
+  </div>
+  <aside class="notes"><p>Ask each participant to name the one check from the board's list their team skips most often.</p></aside>
+</section>
+
+<section class="slide dark" id="next" data-label="Next" data-n="31" data-session="4">
+  <div class="kicker">Capstone</div>
+  <h2>Next: the capstone review board</h2>
+  <ul class="bullets">
+    <li>Design and analyse your chosen change with <code>U.capstone_data()</code></li>
+    <li>Seven minutes to present, three for the board's questions</li>
+    <li>The brief and the rubric are in <code>labs/capstone/README.md</code></li>
+  </ul>
+  <aside class="notes"><p>Unfinished labs can be finished at home: every lab starts from the supplied reference state. The assessor may change the traffic or the pre-period during the defence, so participants should keep their analysis as code that reruns.</p></aside>
+</section>
+</div>
+<script type="application/json" id="academy-data">{"v":1,"engine":"1.0.0","build":{"at":"2026-11-15T03:19:28Z","version":"2027.1.0","commit":"843acec"},"course":{"id":"ds-302","code":"DS-302","title":"Online Experiments and A/B Testing","track":"data-science","lang":"en","dir":"ltr","url":"https://sdaiaacademy.github.io/ds-302/","repo":"SDAIAAcademy/ds-302","home":"../index.html"},"deck":{"id":"day4","kind":"day","day":4,"label":"Day 4","title":"Decide and review","prev":"day3.html","next":"capstone.html","md":"day4.md","alt":{}},"sessions":[{"n":1,"label":"Session 1","title":"Testing AI features","slide":"s1","outcomes":["Analyse an AI-feature test with latency, cost and harm guardrails","Detect novelty decay in a weekly effect","Apply a decision rule in which harm overrides the primary metric"],"minutes":50,"lab":{"id":"4.1","title":"The Luqma chat-assistant test","minutes":25,"href":"../labs/D4_1_chat_assistant_test.ipynb"}},{"n":2,"label":"Session 2","title":"Many segments","slide":"s2","outcomes":["Compute how many false wins 20 uncorrected tests produce","Apply Holm and Benjamini-Hochberg corrections","Report the segments that survive and what that means for the decision"],"minutes":50,"lab":{"id":"4.2","title":"Twenty segment results, corrected","minutes":25,"href":"../labs/D4_2_segment_fdr.ipynb"}},{"n":3,"label":"Session 3","title":"Writing the recommendation","slide":"s3","outcomes":["Compute every number the pre-registration asks for","Apply the written decision rule without exception","Write a one-page recommendation a decision maker can act on"],"minutes":50,"lab":{"id":"4.3","title":"A one-page recommendation for T-101","minutes":25,"href":"../labs/D4_3_launch_recommendation.ipynb"}},{"n":4,"label":"Session 4","title":"The review board","slide":"s4","outcomes":["Check a write-up for sample ratio mismatch, peeking and novelty","Decide launch, iterate or stop with a stated reason","Choose and scope the capstone change"],"minutes":50,"lab":{"id":"4.4","title":"Two write-ups, and the capstone change","minutes":25,"href":"../labs/D4_4_review_board.ipynb"}}],"slides":[{"id":"title","n":1,"title":"Decide and review","kind":"title","session":0,"hash":"7421ac80","md":"#### [day4#title] Decide and review\n\n*SDAIA Academy · Online Experiments and A/B Testing*\n\nDay 4: From numbers to a decision: AI-feature tests, many segments, the recommendation and the review board\n\nData Science Track · 4 teaching days + capstone day · 4 sessions · 4 labs · DS-302","notes":"Open with the question every test ends on: launch, iterate or stop? Three days built the numbers; today is about deciding with them, and about the faults a review board must catch before it reads any result. Ask who in the room has had to defend a test result to a manager who wanted a yes.","minutes":null,"lo":[]},{"id":"agenda","n":2,"title":"Decide and review","kind":"content","session":0,"hash":"80c3b1d8","md":"#### [day4#agenda] Decide and review\n\n*Today*\n\n- **Session 1 · Testing AI features**: An AI feature adds latency, cost and new harms; the review board stops a test whose harm guardrail worsens\n- **Session 2 · Many segments**: Twenty segments at 5% each will show false wins; control the family or the false discovery rate\n- **Session 3 · Writing the recommendation**: One page: the decision, the effect with its interval, the guardrails, the risks, the rule that decided\n- **Session 4 · The review board**: A board reads write-ups for faults before it reads their results, and decides launch, iterate or stop","notes":"Session 1 is an AI-feature test in which harm overrides a real lift. Session 2 is twenty segments. Session 3 writes the one page for T-101. Session 4 sits on the review board and chooses the capstone change. Every lab reads logs or simulations; nothing calls a model.","minutes":null,"lo":[]},{"id":"review-day3","n":3,"title":"Which design measures the courier-priority rule as it would run for everyone?","kind":"quiz","session":0,"hash":"938131a1","md":"#### [day4#review-day3] Which design measures the courier-priority rule as it would run for everyone?\n\n*Review of Day 3*\n\n**Question:** Joud wants the effect of giving priority to orders under a new dispatch rule, as it would be if every order in a city used it. Customer randomisation showed a 10.4-minute gain. Which design answers her question?\n\n- A. Customer randomisation with twice the traffic\n- B. Order randomisation within each customer\n- C. A city-by-hour switchback, analysed over blocks\n- D. Customer randomisation with a Bonferroni correction","notes":"Answer: C. The simulator's global effect was 1.8 minutes; the switchback recovered about 1.5 with its weighting. Remind the room that the switchback pays in power.","minutes":null,"lo":["LO5"]},{"id":"s1","n":4,"title":"Testing AI features","kind":"section","session":1,"hash":"617d3446","md":"#### [day4#s1] Testing AI features\n\n*Session 1*\n\n- Analyse an AI-feature test with latency, cost and harm guardrails\n- Detect novelty decay in a weekly effect\n- Apply a decision rule in which harm overrides the primary metric","notes":"","minutes":null,"lo":["LO4"]},{"id":"ai-features-differ","n":5,"title":"An AI feature brings three guardrails a button never needed","kind":"content","session":1,"hash":"36bcc629","md":"#### [day4#ai-features-differ] An AI feature brings three guardrails a button never needed\n\n*What changes when the treatment is a model*\n\n- **Latency.** A model answers in seconds, not milliseconds; the tail is where customers leave.\n- **Cost.** Every call is paid for; cost per conversation is a metric with a limit.\n- **Harm.** A fluent answer can be wrong: an ingredient that is not there, an allergen missed.\n\n> **National reference.** The SDAIA Generative AI Guidelines list misinformation among the risks and ask for monitoring and human supervision of a deployed system.","notes":"The guidelines (Government and Public editions, course sources) describe risks including misinformation and inaccurate output, and expect monitoring. A harm guardrail in a pre-registration is how a test turns that expectation into a number with a limit. Ask: which of your AI features has a harm you could count?","minutes":null,"lo":["LO4"]},{"id":"luqma-test","n":6,"title":"T-401: Luqma replaces the help menu for half of Sufrah's customers","kind":"content","session":1,"hash":"820ac5c2","md":"#### [day4#luqma-test] T-401: Luqma replaces the help menu for half of Sufrah's customers\n\n*Lab 4.1 · the case*\n\n- 60,203 customers with Luqma, 59,797 with the old help menu, four weeks.\n- Primary: orders per customer over the four weeks.\n- Guardrails: p95 response time at most 5 s, cost per conversation at most 0.12 SAR, complaints at most +1.0 per 1,000 orders.\n- **Harm guardrail:** wrong ingredient or allergen complaints at most +0.3 per 1,000 orders, judged on the upper bound.\n\n- **The written rule.** Stop if the harm guardrail fails. Otherwise launch if the primary interval is above zero and every guardrail holds; iterate if a non-harm guardrail fails.","notes":"The rule was written before the test, which is the point: nobody can argue the harm away after seeing a lift. Numbers on the next slides are from the solution run of Lab 4.1, full mode (120,000 customers).","minutes":null,"lo":["LO4"]},{"id":"luqma-results","n":7,"title":"Customers order more, and wrong answers about food rise","kind":"content","session":1,"hash":"f292d531","md":"#### [day4#luqma-results] Customers order more, and wrong answers about food rise\n\n*Lab 4.1, steps 1 to 3*\n\n| Metric | Old help menu | Luqma | Against the plan |\n| --- | --- | --- | --- |\n| Orders per customer, 4 weeks | 5.08 | 5.19 (+2.1%) | difference +0.105, interval 0.034 to 0.176: above zero |\n| p95 response time | 0.98 s | 3.94 s | holds (limit 5 s) |\n| Cost per conversation | 0.00 SAR | 0.07 SAR | holds (limit 0.12) |\n| Complaints per 1,000 orders | 5.58 | 6.03 | upper bound +0.83: holds |\n| Wrong ingredient or allergen, per 1,000 | 1.34 | 2.15 | upper bound +1.02: **fails** (limit +0.3) |","notes":"Complaint rates are ratio metrics over customers, so Lab 4.1 uses the delta method of Lab 2.3. Point out escalations: 19.1% of help-menu contacts reached a human agent, 11.0% of Luqma conversations. Cheaper, and also the route by which a wrong answer reaches a customer with no person in between.","minutes":null,"lo":["LO4"]},{"id":"novelty","n":8,"title":"The lift fades week by week: novelty, not a settled effect","kind":"content","session":1,"hash":"3d5b8c77","md":"#### [day4#novelty] The lift fades week by week: novelty, not a settled effect\n\n*Lab 4.1, step 4*\n\n| Item | Value |\n| --- | --- |\n| Week 1 | +5.8% |\n| Week 2 | +2.5% |\n| Week 3 | +0.5% |\n| Week 4 | -0.5% |\n\n> **What goes wrong.** Reporting the four-week average, +2.1%, as the long-run effect. Weeks 3 and 4 have intervals that include zero.","notes":"Customers try the new thing, then go back to their habits. The settled effect is what the last weeks show. A longer test, or a holdout kept after launch, measures it. Week 4's interval is -2.2% to +1.1%.","minutes":null,"lo":["LO4"]},{"id":"harm-overrides","n":9,"title":"The rule says stop, and it would say so with any lift","kind":"content","session":1,"hash":"6e47dcc3","md":"#### [day4#harm-overrides] The rule says stop, and it would say so with any lift\n\n*Lab 4.1, step 5*\n\n1. **1 · Harm guardrail** Fails: +0.81 per 1,000, upper bound +1.02\n2. **2 · The rule** Stop, before reading the primary\n3. **3 · What next** Fix the cause: capstone change C2 adds an allergen checker\n\n> **Takeaway.** A harm guardrail is judged on its upper bound: the test must show the harm is below the limit, not merely fail to show it is above.","notes":"Press once per step. A participant will say the lift is real; agree, and point at the rule. Stop does not mean never: it means this version does not ship. C2 in the capstone is the same assistant with an allergen checker.","minutes":null,"lo":["LO4"]},{"id":"check-harm","n":10,"title":"The harm estimate is small. Is that enough?","kind":"quiz","session":1,"hash":"6ad0c36d","md":"#### [day4#check-harm] The harm estimate is small. Is that enough?\n\n*Checkpoint*\n\n**Question:** A new AI menu search raises allergen complaints by +0.10 per 1,000 orders, 95% interval -0.20 to +0.40. The pre-registered limit is +0.30 on the upper bound. What does the rule say?\n\n- A. It holds: the difference is not significantly above zero\n- B. It fails: the upper bound, +0.40, is above the limit\n- C. It holds: the estimate, +0.10, is below the limit\n- D. It cannot be judged without a longer test","notes":"Answer: B. Connect to non-inferiority from Day 1, session 3: the same logic, applied to harm.","minutes":null,"lo":["LO4"]},{"id":"lab-4-1","n":11,"title":"The Luqma chat-assistant test","kind":"lab","session":1,"hash":"6e86ce51","md":"#### [day4#lab-4-1] The Luqma chat-assistant test\n\nLab 4.1 · 25 min\n\nAnalyse a chat-assistant test with latency, cost and complaint guardrails, check the lift week by week and apply the harm rule.\n\n[D4_1_chat_assistant_test.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D4_1_chat_assistant_test.ipynb)\n\n- [ ] The primary metric with its interval (5 min)\n- [ ] Latency and cost guardrails (5 min)\n- [ ] Complaints and wrong-information complaints (6 min)\n- [ ] The lift by week: novelty (5 min)\n- [ ] The decision and its reason (4 min)\n- [ ] ✱ Stretch: Find the city where the harm is largest and say what you would ask the Luqma team","notes":"AI-tutor lab. The usual slip is computing complaint rates over orders as independent rows: the interval comes out too narrow. Quick mode (30,000 customers) gives a primary interval that may include zero; the lab checks only that the lift is positive there and says so. No model is called: the conversations are logs.","minutes":null,"lo":[]},{"id":"s2","n":12,"title":"Many segments","kind":"section","session":2,"hash":"f484028b","md":"#### [day4#s2] Many segments\n\n*Session 2*\n\n- Compute how many false wins 20 uncorrected tests produce\n- Apply Holm and Benjamini-Hochberg corrections\n- Report the segments that survive and what that means for the decision","notes":"","minutes":null,"lo":["LO6"]},{"id":"twenty-segments","n":13,"title":"Twenty cuisine segments, four of them \"significant\"","kind":"content","session":2,"hash":"f7420ac2","md":"#### [day4#twenty-segments] Twenty cuisine segments, four of them \"significant\"\n\n*Lab 4.2 · the case*\n\n- T-205 added photos to menus. Overall: a small lift.\n- The team cut the result by the cuisine of each customer's favourite restaurant: 20 segments.\n- Below 0.05: Mandi (p = 0.00001), Coffee (0.001), Indian (0.040, a drop), Desserts (0.049).\n\n**64%** of 20-test analyses with no effect anywhere show at least one p below 0.05; 1.0 false win on average","notes":"The 64% is from Lab 4.2's simulation, 20,000 sets of twenty tests, and matches 1 - 0.95²⁰ because the segments are independent. Ask: in your team's dashboards, how many cuts does a typical result get?","minutes":null,"lo":["LO6"]},{"id":"fwer-vs-fdr","n":14,"title":"Control the chance of any false win, or the share of false wins you report","kind":"content","session":2,"hash":"17daf250","md":"#### [day4#fwer-vs-fdr] Control the chance of any false win, or the share of false wins you report\n\n*Two error rates to control*\n\n- **Family-wise error: Bonferroni, Holm.** The chance of even one false win stays at 5%. Bonferroni tests each p against 0.05 / 20 = 0.0025; Holm steps down from the smallest p and never rejects less.\n- **False discovery rate: Benjamini-Hochberg.** Among the segments you report, the expected share of false ones stays at 5%. Sort the p-values; keep the largest k with p(k) ≤ 0.05 k / 20.\n\n> **On the platforms.** GrowthBook's documentation offers Holm-Bonferroni and Benjamini-Hochberg corrections for many metrics or many variations.","notes":"Use FWER when one false claim is costly, as in a launch claim; FDR when you are exploring a list and can accept a stated share of false leads. A single pre-registered primary metric needs no correction.","minutes":null,"lo":["LO6"]},{"id":"what-survives","n":15,"title":"Two segments survive every correction; two are chance","kind":"content","session":2,"hash":"0cf1f2cc","md":"#### [day4#what-survives] Two segments survive every correction; two are chance\n\n*Lab 4.2, steps 3 to 5*\n\n| Segment | Difference | p | Bonferroni | Holm | Benjamini-Hochberg |\n| --- | --- | --- | --- | --- | --- |\n| Mandi | +0.449 | 0.00001 | kept | kept | kept |\n| Coffee | +0.317 | 0.0010 | kept | kept | kept |\n| Indian | -0.145 | 0.040 | dropped | dropped | dropped |\n| Desserts | +0.137 | 0.049 | dropped | dropped | dropped |\n\n> **What a survivor earns.** A new test, pre-registered on that segment. Not a launch.","notes":"The simulator planted real effects in Mandi and Coffee only, so the corrections found the truth here; in real data you never know. Ask the room what they would say to a product manager who wants to launch photos for Desserts only.","minutes":null,"lo":["LO6"]},{"id":"check-segments","n":16,"title":"A segment with p = 0.01","kind":"quiz","session":2,"hash":"04610817","md":"#### [day4#check-segments] A segment with p = 0.01\n\n*Checkpoint*\n\n**Question:** Ruba cut a test into 20 city-and-platform segments. One, Abha on Android, has p = 0.01; the other nineteen are above 0.2. With Benjamini-Hochberg at 5%, what does she report?\n\n- A. A win in Abha on Android, because 0.01 is below 0.05\n- B. A win with a 1% chance of being false\n- C. That segment analysis is never allowed\n- D. No segment survives: 0.01 is above its threshold, 0.05 × 1 / 20 = 0.0025","notes":"Answer: D. The rank-1 threshold of Benjamini-Hochberg equals Bonferroni's; the procedures differ only from rank 2 onward. Had a second segment shown p = 0.004, both would survive (0.004 is below 0.05 × 2 / 20 = 0.005): the rule keeps every rank up to the largest that passes.","minutes":null,"lo":["LO6"]},{"id":"lab-4-2","n":17,"title":"Twenty segment results, corrected","kind":"lab","session":2,"hash":"99bc9bb6","md":"#### [day4#lab-4-2] Twenty segment results, corrected\n\nLab 4.2 · 25 min\n\nCorrect 20 segment results for false discoveries and report what survives.\n\n[D4_2_segment_fdr.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D4_2_segment_fdr.ipynb)\n\n- [ ] Twenty z-tests from the segment table (5 min)\n- [ ] How many false wins by chance: simulate (5 min)\n- [ ] Bonferroni and Holm (5 min)\n- [ ] Benjamini-Hochberg (5 min)\n- [ ] What survives, in two sentences (5 min)\n- [ ] ✱ Stretch: Shrink the segment effects toward the overall effect and compare","notes":"AI-tutor lab. Participants write Benjamini-Hochberg by hand and the lab compares it with statsmodels; the common bug is keeping only the ranks that pass rather than all ranks up to the largest that passes. The segment table is given, so the lab starts on its own.","minutes":null,"lo":[]},{"id":"s3","n":18,"title":"Writing the recommendation","kind":"section","session":3,"hash":"478604c3","md":"#### [day4#s3] Writing the recommendation\n\n*Session 3*\n\n- Compute every number the pre-registration asks for\n- Apply the written decision rule without exception\n- Write a one-page recommendation a decision maker can act on","notes":"","minutes":null,"lo":["LO6"]},{"id":"one-page","n":19,"title":"One page, in the order the reader decides","kind":"content","session":3,"hash":"da050b9e","md":"#### [day4#one-page] One page, in the order the reader decides\n\n*The recommendation*\n\n1. **1 · Decision** Launch, iterate or stop, and why, in two sentences\n2. **2 · Effect** With its interval, in units a manager uses\n3. **3 · Guardrails** Each against its pre-registered limit\n4. **4 · Risks, next step** What would change the decision; who does what\n\n> **Takeaway.** The rule that decided is the pre-registered one, applied literally.","notes":"Press once per step. The page is not a report of everything computed; it is the case for one decision. Lab 4.3 caps it at 450 words.","minutes":null,"lo":["LO6"]},{"id":"t101-numbers","n":20,"title":"T-101: a clear lift, and latency beyond the limit","kind":"content","session":3,"hash":"fd723c90","md":"#### [day4#t101-numbers] T-101: a clear lift, and latency beyond the limit\n\n*Lab 4.3, steps 2 and 3*\n\n**+3.5%** orders per triggered customer, +0.226 (95% interval 0.179 to 0.273), adjusted with 28 pre-period days\n\n| Guardrail | Value | Limit |\n| --- | --- | --- |\n| Search p95 latency, difference | +405 ms | at most 300: **fails** |\n| Inference cost per 1,000 searches | 5.80 SAR | at most 8.0: holds |\n| Complaints per 1,000, upper bound | +0.36 | at most 1.0: holds |\n| Revenue, lower bound, relative | +1.6% | at least -1%: holds |","notes":"Sample ratio: 100,417 against 99,583, p = 0.062, so the split holds. The estimators are given in the lab (CUPED from Lab 2.2, the delta method from Lab 2.3); the work is applying the pre-registration. Lab 4.3 always uses the full stream, in quick mode too, because the decision depends on it.","minutes":null,"lo":["LO6"]},{"id":"t101-decision","n":21,"title":"The rule says iterate: a non-harm guardrail failed","kind":"content","session":3,"hash":"9f8fb717","md":"#### [day4#t101-decision] The rule says iterate: a non-harm guardrail failed\n\n*Lab 4.3, step 4*\n\n```python\n# file: decide()\nif primary[\"lo\"] \u003c= 0 or harm_failed:\n    return \"stop\"\nreturn \"launch\" if all_hold else \"iterate\"\n```\n\n- The primary interval is far above zero: not a stop.\n- Latency is not the harm guardrail: not a stop.\n- One guardrail failed: not a launch.\n- Next step: cut p95 latency by at least 105 ms, then a 14-day confirmation.\n\n> **What goes wrong.** \"The lift is so large that 405 ms is fine.\" That argument belonged in the pre-registration; after the test it is a moved goalpost.","notes":"Yazeed owns the next step. Ask the room: if the faster version loses half the lift, what decides? The same rule, in a new pre-registration.","minutes":null,"lo":["LO6"]},{"id":"check-page","n":22,"title":"What goes first on the page?","kind":"quiz","session":3,"hash":"36c13089","md":"#### [day4#check-page] What goes first on the page?\n\n*Checkpoint*\n\n**Question:** Rawan's board reads one page per test. Ruba's draft for T-101 opens with the method, then the data, then the effect, and ends with the decision. What should she change?\n\n- A. Put the decision and its reason first; the evidence follows\n- B. Put the guardrail table first, because it decided\n- C. Drop the interval and keep the point estimate\n- D. Add a methods appendix to the page","notes":"Answer: A. The method belongs in the pre-registration, linked from the page.","minutes":null,"lo":["LO6"]},{"id":"lab-4-3","n":23,"title":"A one-page recommendation for T-101","kind":"lab","session":3,"hash":"3964f078","md":"#### [day4#lab-4-3] A one-page recommendation for T-101\n\nLab 4.3 · 25 min\n\nDraft a one-page launch recommendation for the AI-ranked search test with effect, interval and guardrails, from its pre-registration.\n\n[D4_3_launch_recommendation.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D4_3_launch_recommendation.ipynb)\n\n- [ ] Read the pre-registration (3 min)\n- [ ] The primary effect, adjusted, with its interval (6 min)\n- [ ] The four guardrails against their thresholds (6 min)\n- [ ] Apply the decision rule (4 min)\n- [ ] Write and save the one page (6 min)\n- [ ] ✱ Stretch: Add the effect in Riyadh only and say why it does not change the decision","notes":"AI-tutor lab. An assistant may comment on the draft; the numbers and the decision are the participant's. Watch for pages that argue for launch: send them back to the rule. The page is saved as artifacts/T101_recommendation.md.","minutes":null,"lo":[]},{"id":"s4","n":24,"title":"The review board","kind":"section","session":4,"hash":"57b849e5","md":"#### [day4#s4] The review board\n\n*Session 4*\n\n- Check a write-up for sample ratio mismatch, peeking and novelty\n- Decide launch, iterate or stop with a stated reason\n- Choose and scope the capstone change","notes":"","minutes":null,"lo":["LO6"]},{"id":"board-checklist","n":25,"title":"Read for faults before you read the result","kind":"content","session":4,"hash":"f27e2d79","md":"#### [day4#board-checklist] Read for faults before you read the result\n\n*The review board*\n\n1. Did the split work? Sample ratio (Lab 1.2).\n2. Is the analysis the pre-registered one, at the planned time? (Labs 1.4, 3.1)\n3. Is the effect settled, or fading? (Lab 4.1)\n4. Did every guardrail hold, the harm guardrail above all? (Labs 1.3, 4.1)\n5. Was a segment or a metric picked after the fact? (Lab 4.2)\n\n> **Why this order.** A fault early in the list makes every later number suspect.","notes":"Each item is a lab of this course. Five write-ups, W1 to W5, all end \"we recommend launch\"; each has one fault or none. The board's own log is in data/reference, opened only after the participant has decided.","minutes":null,"lo":["LO6"]},{"id":"w1-w2","n":26,"title":"W1 fails on the split; W2 fails on the timing","kind":"content","session":4,"hash":"927636f2","md":"#### [day4#w1-w2] W1 fails on the split; W2 fails on the timing\n\n*Lab 4.4, steps 2 and 3*\n\n- **W1 · One-tap reorder banner.** +2.1%, interval 0.9% to 3.3%. Users 50,912 against 49,088: chi-square p = 8 × 10⁻⁹. **Iterate:** find the cause, rerun.\n- **W2 · Dish of the day carousel.** Stopped on day 9 at z = 2.19; the planned boundary there was 3.47. The planned day-28 analysis: z = 0.27. **Stop:** no effect.","notes":"W1's interval looks clean, which is the trap: a sample ratio mismatch means the arms differ in who is in them. W2 is the peeking of Day 3; the plan's boundaries are given in the lab. Iterate for W1 because the idea may still work; stop for W2 because the planned test found nothing.","minutes":null,"lo":["LO6"]},{"id":"choose-capstone","n":27,"title":"Choose the capstone change, knowing what 28 days can detect","kind":"content","session":4,"hash":"52dd2188","md":"#### [day4#choose-capstone] Choose the capstone change, knowing what 28 days can detect\n\n*Lab 4.4, step 5*\n\n| Change | Customers | Detectable lift, raw | With pre-period |\n| --- | --- | --- | --- |\n| C1 · AI-written dish descriptions | 160,000 | 1.7% | 0.85% |\n| C2 · Luqma with an allergen checker | 120,000 | 2.0% | 0.98% |\n| C3 · AI-ranked restaurant list | 200,000 | 1.5% | 0.76% |\n\n5% two-sided, 80% power, orders per customer over 28 days; the pre-period correlation is about 0.87.","notes":"From the solution run of Lab 4.4, full mode. Adjustment halves the detectable lift because the variance shrinks by 1 - ρ², about 0.25. Each change has its own harm guardrail; C3's is fairness to small restaurants, which is not a complaint count and needs its own definition.","minutes":null,"lo":["LO4"]},{"id":"check-board","n":28,"title":"A write-up with a fading lift","kind":"quiz","session":4,"hash":"17c17b74","md":"#### [day4#check-board] A write-up with a fading lift\n\n*Checkpoint*\n\n**Question:** A write-up reports +3.0% over four weeks, interval 1.6% to 4.4%, and recommends launch. Its weekly lifts are 7.1%, 2.8%, 0.9% and 0.2%, each with a standard error of 0.8 points. What does the board decide?\n\n- A. Launch: the four-week interval is above zero\n- B. Stop: the result is novelty, so there is no effect\n- C. Iterate: run longer, because the settled effect is not shown to be above zero\n- D. Apply Benjamini-Hochberg to the four weeks","notes":"Answer: C. This is W3, the first stretch write-up of Lab 4.4; participants who reach the stretch will recognise it.","minutes":null,"lo":["LO6"]},{"id":"lab-4-4","n":29,"title":"Two write-ups, and the capstone change","kind":"lab","session":4,"hash":"d57f8a3f","md":"#### [day4#lab-4-4] Two write-ups, and the capstone change\n\nLab 4.4 · 25 min\n\nDecide two seeded write-ups, score the review log against the reference decisions, and choose the capstone change.\n\n[D4_4_review_board.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D4_4_review_board.ipynb)\n\n- [ ] The review checklist (3 min)\n- [ ] W1: check, decide, log (6 min)\n- [ ] W2: check, decide, log (6 min)\n- [ ] Score the log (3 min)\n- [ ] Choose the capstone change and its primary metric (7 min)\n- [ ] ✱ Stretch: Decide W3, W4 and W5","notes":"AI-tutor lab. The review log, artifacts/review_log.json, is LO6's evidence, scored against the board's log. The capstone choice, artifacts/capstone_choice.json, starts the capstone. Participants who finish decide W3 to W5 in the stretch: W3 iterate (novelty), W4 launch (clean), W5 stop (courier earnings beyond the limit).","minutes":null,"lo":[]},{"id":"wrap-up","n":30,"title":"Three things to keep","kind":"content","session":4,"hash":"3e1117f3","md":"#### [day4#wrap-up] Three things to keep\n\n*Day 4*\n\n- **Harm decides first.** Luqma's lift was real; the wrong-information guardrail stopped it.\n- **Correct the cuts.** Of four \"significant\" segments, two survived.\n- **Faults before results.** Sample ratio, timing, novelty, guardrails: then the effect.","notes":"Ask each participant to name the one check from the board's list their team skips most often.","minutes":null,"lo":[]},{"id":"next","n":31,"title":"Next: the capstone review board","kind":"content","session":4,"hash":"251f9a7e","md":"#### [day4#next] Next: the capstone review board\n\n*Capstone*\n\n- Design and analyse your chosen change with `U.capstone_data()`\n- Seven minutes to present, three for the board's questions\n- The brief and the rubric are in `labs/capstone/README.md`","notes":"Unfinished labs can be finished at home: every lab starts from the supplied reference state. The assessor may change the traffic or the pre-period during the defence, so participants should keep their analysis as code that reruns.","minutes":null,"lo":[]}],"activities":[{"id":"review-day3-q1","slide":"review-day3","type":"single","prompt":"Joud wants the effect of giving priority to orders under a new dispatch rule, as it would be if every order in a city used it. Customer randomisation showed a 10.4-minute gain. Which design answers her question?","options":[{"key":"A","text":"Customer randomisation with twice the traffic"},{"key":"B","text":"Order randomisation within each customer"},{"key":"C","text":"A city-by-hour switchback, analysed over blocks"},{"key":"D","text":"Customer randomisation with a Bonferroni correction"}],"correct":[2],"explanation":"In a block every order runs the same rule, so the couriers are not shared between arms and the difference between blocks estimates the global effect.","misconceptions":["Keeps the shared couriers that caused the transfer of waiting between arms","Moves the unit to the order, which shares couriers even more tightly","","Corrects for many metrics, not for interference between units"],"lo":["LO5"]},{"id":"check-harm-q1","slide":"check-harm","type":"single","prompt":"A new AI menu search raises allergen complaints by +0.10 per 1,000 orders, 95% interval -0.20 to +0.40. The pre-registered limit is +0.30 on the upper bound. What does the rule say?","options":[{"key":"A","text":"It holds: the difference is not significantly above zero"},{"key":"B","text":"It fails: the upper bound, +0.40, is above the limit"},{"key":"C","text":"It holds: the estimate, +0.10, is below the limit"},{"key":"D","text":"It cannot be judged without a longer test"}],"correct":[1],"explanation":"The test must show the harm is below the limit. An interval that reaches +0.40 has not shown that; a larger test might.","misconceptions":["Reads a difference that is not significant as evidence of no harm","","Judges harm on the estimate, which lets a noisy test pass","Thinks a test can never judge harm, when the upper bound does exactly that"],"lo":["LO4"]},{"id":"check-segments-q1","slide":"check-segments","type":"single","prompt":"Ruba cut a test into 20 city-and-platform segments. One, Abha on Android, has p = 0.01; the other nineteen are above 0.2. With Benjamini-Hochberg at 5%, what does she report?","options":[{"key":"A","text":"A win in Abha on Android, because 0.01 is below 0.05"},{"key":"B","text":"A win with a 1% chance of being false"},{"key":"C","text":"That segment analysis is never allowed"},{"key":"D","text":"No segment survives: 0.01 is above its threshold, 0.05 × 1 / 20 = 0.0025"}],"correct":[3],"explanation":"Benjamini-Hochberg compares the k-th smallest p-value with 0.05 × k / 20. The smallest, 0.01, is above 0.0025, and no larger p-value meets its own threshold (the last one is 0.05), so nothing is reported.","misconceptions":["Applies the single-test threshold to one test chosen from twenty","Thinks the false discovery rate is the same as the p-value of the best segment","Confuses the smallest-p threshold with a ban on segments",""],"lo":["LO6"]},{"id":"check-page-q1","slide":"check-page","type":"single","prompt":"Rawan's board reads one page per test. Ruba's draft for T-101 opens with the method, then the data, then the effect, and ends with the decision. What should she change?","options":[{"key":"A","text":"Put the decision and its reason first; the evidence follows"},{"key":"B","text":"Put the guardrail table first, because it decided"},{"key":"C","text":"Drop the interval and keep the point estimate"},{"key":"D","text":"Add a methods appendix to the page"}],"correct":[0],"explanation":"The reader decides; the page leads with the decision so every number after it can be checked against it.","misconceptions":["","Moves detail up when the reader needs the conclusion first","Hides the uncertainty the board needs to judge the decision","Adds length when the problem is the order"],"lo":["LO6"]},{"id":"check-board-q1","slide":"check-board","type":"single","prompt":"A write-up reports +3.0% over four weeks, interval 1.6% to 4.4%, and recommends launch. Its weekly lifts are 7.1%, 2.8%, 0.9% and 0.2%, each with a standard error of 0.8 points. What does the board decide?","options":[{"key":"A","text":"Launch: the four-week interval is above zero"},{"key":"B","text":"Stop: the result is novelty, so there is no effect"},{"key":"C","text":"Iterate: run longer, because the settled effect is not shown to be above zero"},{"key":"D","text":"Apply Benjamini-Hochberg to the four weeks"}],"correct":[2],"explanation":"Week 4's interval, 0.2% ± 1.6 points, includes zero; the board needs the settled effect before a launch.","misconceptions":["Takes the four-week average as the settled effect when the weekly lifts show it fading","Stops for a fault that is not harm; the idea may still have a small settled effect","","Applies a segment correction to a question about time"],"lo":["LO6"]}],"ai":{"context":{"course":"../context/course.md","courseJs":"../context/course.js","day":"day4.md","llms":"../llms.txt"},"tasks":[],"tools":[]},"bridge":{"allowedOrigins":[]},"features":{},"strings":{}}</script>
+<script src="../_engine/academy.js"></script>
+</body>
+</html>

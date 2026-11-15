@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-ax="deck" data-track="data-science">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 3 · Monitoring and interference · Online Experiments and A/B Testing</title>
+<meta name="generator" content="SDAIA Academy engine 1.0.0">
+<link rel="icon" href="../_engine/icon.svg">
+<link rel="alternate" type="text/markdown" href="day3.md">
+<link rel="describedby" href="../llms.txt">
+<link rel="stylesheet" href="../_engine/academy.css">
+</head>
+<body>
+<div class="deck" data-course="Online Experiments and A/B Testing" data-track="data-science" data-day="Day 3">
+<section class="slide title" id="title" data-auto="title" data-label="Welcome" data-n="1">
+  <div class="kicker">SDAIA Academy · Online Experiments and A/B Testing</div>
+  <h1>Monitoring and interference</h1>
+  <p class="lead mt">Day 3: Watch a test every day without inventing wins, and test a marketplace where customers share couriers</p>
+  <div class="meta"><span class="track">Data Science Track</span><span>4 teaching days + capstone day</span><span>4 sessions · 4 labs</span><span>DS-302</span></div>
+  <aside class="notes"><p>Open with a confession many teams can make: "We look at the dashboard every morning." Ask who stops tests when the p-value turns green. Today measures what that costs, then turns to a test that was wrong for a different reason: the customers were not independent.</p></aside>
+</section>
+
+<section class="slide" id="agenda" data-auto="agenda" data-label="Agenda" data-n="2">
+  <div class="kicker">Today</div>
+  <h2>Monitoring and interference</h2>
+  <div class="agenda"><div class="item"><div><b>Session 1 · Group sequential designs</b><small>Looking every day and stopping at the first p below 0.05 inflates false wins; spending alpha across looks does not</small></div></div><div class="item"><div><b>Session 2 · Always-valid tests</b><small>A test that stays valid at every look, whenever you stop, at a price in power</small></div></div><div class="item"><div><b>Session 3 · Interference in marketplaces</b><small>When treated and control customers share couriers, a customer-randomised test measures stealing, not the change</small></div></div><div class="item"><div><b>Session 4 · Cluster and switchback designs</b><small>Randomise what shares the couriers, city by hour, and pay for it in power</small></div></div></div>
+  <aside class="notes"><p>Two halves: monitoring (sessions 1 and 2, the daily-peeking simulator) and interference (sessions 3 and 4, the marketplace simulator). Both simulators are in sufrah.py and run in seconds.</p></aside>
+</section>
+
+<section class="slide" id="review-day2" data-lo="LO1" data-label="Review" data-n="3">
+  <div class="kicker">Review of Day 2</div>
+  <h2>Which change narrows T-101's interval without changing the estimand?</h2>
+  <div class="quiz" data-type="single" data-lo="LO1" data-id="review-day2-q1">
+    <p class="lead">Ruba must narrow the interval of revenue per triggered customer in T-101 and keep estimating exactly the effect on revenue. Which method does that?</p>
+    <div class="opts">
+      <div class="opt" data-why="Forgets that a cap changes what is estimated: capped revenue, not revenue" data-k="A">Capping each order at the 99th percentile</div>
+      <div class="opt" data-ok data-k="B">Regression adjustment on revenue in the 28 pre-period days</div>
+      <div class="opt" data-why="Removes customers, which changes the population and the estimand" data-k="C">Dropping the customers with the largest orders</div>
+      <div class="opt" data-why="Changes the metric to a ratio with its own estimand" data-k="D">Switching to revenue per order</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A pre-period covariate removes predictable noise; its term has mean zero in each arm, so the expected difference, and so the estimand, is unchanged.</div>
+  </div>
+  <aside class="notes"><p>Answer: B. Capping trades a small bias for less noise and is fine when stated; the question asked for the same estimand.</p></aside>
+</section>
+
+<!-- ======================= SESSION 1 ======================= -->
+<section class="slide section" id="s1" data-auto="section" data-session="1" data-n="4">
+  <div class="kicker">Session 1</div>
+  <h1>Group sequential designs</h1>
+  <ul class="bullets outcomes"><li>Measure the false-positive rate of daily peeking by simulation</li><li>Compute boundaries from an alpha-spending function</li><li>Report the false-positive rate, power and expected stopping day of a group sequential test</li></ul>
+  <div class="sess-no">01</div>
+</section>
+
+<section class="slide" id="peeking-cost" data-lo="LO3" data-label="Peeking" data-n="5" data-session="1">
+  <div class="kicker">Lab 3.1, step 1</div>
+  <h2>Stopping at the first p below 0.05 gives 28% false wins</h2>
+  <div class="cols cols-2">
+    <div class="stat"><div class="big">28.1%</div><div class="lbl">of 4,000 simulated tests with no effect cross 1.96 on at least one of 28 daily looks</div></div>
+    <ul class="bullets small">
+      <li>Each look is another chance for noise to cross the line.</li>
+      <li>The daily z values are correlated, so the rate is not 1 - 0.95²⁸, but it is still far above 5%.</li>
+      <li>The fixed test, one look on day 28: 5.3%.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>The simulator: orders per customer, mean 5.0, standard deviation 6.0, 3,000 new customers per arm each day, 28 days. Numbers from the solution run of Lab 3.1, full mode. DS-205 measured this inflation; today repairs it.</p></aside>
+</section>
+
+<section class="slide" id="alpha-spending" data-lo="LO3" data-label="Alpha spending" data-n="6" data-session="1">
+  <div class="kicker">The idea</div>
+  <h2>Spend the 5% across the looks, on a schedule fixed in advance</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="Lan-DeMets, O'Brien-Fleming type"><code class="language-python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">obf</span>(<span class="hljs-params">t, alpha=<span class="hljs-number">0.05</span></span>):   <span class="hljs-comment"># t: share of the plan</span>
+    z = norm.ppf(<span class="hljs-number">1</span> - alpha / <span class="hljs-number">2</span>)
+    <span class="hljs-keyword">return</span> <span class="hljs-number">2</span> - <span class="hljs-number">2</span> * norm.cdf(z / sqrt(t))</code></pre>
+    <table class="t small">
+      <tr><th>Day</th><th class="num">Alpha spent</th></tr>
+      <tr><td>7</td><td class="num">0.0001</td></tr>
+      <tr><td>14</td><td class="num">0.0056</td></tr>
+      <tr><td>21</td><td class="num">0.0236</td></tr>
+      <tr><td>28</td><td class="num">0.0500</td></tr>
+    </table>
+  </div>
+  <p class="small mt">Almost nothing early, when the data is thin; nearly all at the end.</p>
+  <aside class="notes"><p>Lan and DeMets introduced spending functions so the looks need not be equally spaced. Spotify's engineering blog describes its platform as using group sequential tests with Lan-DeMets alpha spending (course sources). A Pocock-type function spends evenly instead: easier early stops, a stricter last look.</p></aside>
+</section>
+
+<section class="slide" id="boundaries-by-simulation" data-lo="LO3" data-label="Boundaries" data-n="7" data-session="1">
+  <div class="kicker">Lab 3.1, step 3</div>
+  <h2>Compute each day's boundary by simulation</h2>
+  <ol class="bullets small">
+    <li>Simulate 40,000 tests with no effect.</li>
+    <li>At day k, among tests not yet stopped, find the |z| that stops exactly the alpha spent at day k, as a share of all tests.</li>
+    <li>Stop those tests; move to day k + 1.</li>
+  </ol>
+  <div class="bars mt-s">
+    <div class="row"><span>Day 7</span><div class="bar c-coral" style="--w:95%"></div><span class="val">3.80</span></div>
+    <div class="row"><span>Day 14</span><div class="bar c-amber" style="--w:73%"></div><span class="val">2.91</span></div>
+    <div class="row"><span>Day 21</span><div class="bar c-teal" style="--w:61%"></div><span class="val">2.44</span></div>
+    <div class="row"><span>Day 28</span><div class="bar c-teal" style="--w:54%"></div><span class="val">2.14</span></div>
+  </div>
+  <aside class="notes"><p>Days 1 to 6 have an infinite boundary: the alpha spent there is less than one test in 40,000. Exact boundaries come from numerical integration (R's ldbounds, or gsDesign); the simulation gives the same idea in ten lines and works for any spending function. The last boundary, 2.14, is above 1.96 because a little alpha was spent on earlier looks.</p></aside>
+</section>
+
+<section class="slide" id="gst-result" data-lo="LO3" data-label="The result" data-n="8" data-session="1">
+  <div class="kicker">Lab 3.1, full mode, fresh simulations</div>
+  <h2>Five percent false wins, nearly the same power, a week saved</h2>
+  <table class="t">
+    <tr><th>Design</th><th class="num">False-positive rate</th><th class="num">Power, true lift 1.6%</th><th class="num">Mean stopping day</th></tr>
+    <tr><td>Fixed, one look on day 28</td><td class="num">0.053</td><td class="num">0.777</td><td class="num">28</td></tr>
+    <tr><td>Daily peeking at 1.96</td><td class="num">0.281</td><td class="num">not valid</td><td class="num">not valid</td></tr>
+    <tr class="hl"><td>Group sequential, O'Brien-Fleming</td><td class="num">0.052</td><td class="num">0.759</td><td class="num">21.1</td></tr>
+  </table>
+  <aside class="notes"><p>LO3's evidence: error rates at or below the nominal level, with expected stopping times. 0.052 is within simulation error of 0.05 (band plus or minus 0.007 with 4,000 simulations). The cost of 28 looks is two points of power; the gain is stopping about a week early when the effect is real.</p></aside>
+</section>
+
+<section class="slide" id="gst-rules" data-lo="LO3" data-label="The rules" data-n="9" data-session="1">
+  <div class="kicker">What the pre-registration fixes</div>
+  <h2>A group sequential plan is a contract written before day 1</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>The looks</h4><p class="small mb0">How many and when, or the information fractions.</p></div>
+    <div class="card c-cyan"><h4>The spending</h4><p class="small mb0">O'Brien-Fleming, Pocock or another function, with alpha.</p></div>
+    <div class="card c-navy"><h4>The maximum</h4><p class="small mb0">The longest the test may run: 28 days for T-101.</p></div>
+  </div>
+  <div class="callout warn mt"><b>Guardrails can stop a test too.</b> A harm guardrail is usually monitored with its own, looser boundary: stopping for harm should be easy.</div>
+  <aside class="notes"><p>Ask the room what happens if someone adds a look on day 10 that was not in the plan. With a spending function the plan can absorb an unplanned look, provided the information fraction is recomputed; without one, the error rate is no longer known.</p></aside>
+</section>
+
+<section class="slide" id="check-gst" data-lo="LO3" data-n="10" data-session="1">
+  <div class="kicker">Checkpoint</div>
+  <h2>Day 5: the dashboard is green</h2>
+  <div class="quiz" data-type="single" data-lo="LO3" data-id="check-gst-q1">
+    <p class="lead">A 28-day test with an O'Brien-Fleming plan shows z = 2.4 on day 5. The boundary on day 5 is infinite. Yazeed wants to launch. What do you tell him?</p>
+    <div class="opts">
+      <div class="opt" data-why="Applies the fixed-test threshold to a sequential plan, which is exactly the peeking error" data-k="A">The result is significant at 5%, so launch</div>
+      <div class="opt" data-why="Thinks a sequential plan forbids looking, when it only forbids acting below the boundary" data-k="B">We should not have looked at day 5 at all</div>
+      <div class="opt" data-ok data-k="C">Keep running: the evidence has not crossed the planned boundary</div>
+      <div class="opt" data-why="Moves the plan after seeing the data" data-k="D">Switch to a Pocock plan, whose day-5 boundary is lower</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> The boundary is what keeps the false-win rate at 5% over all looks; crossing 1.96 early is common under no effect.</div>
+  </div>
+  <aside class="notes"><p>Answer: C. Remind the room that the look itself is fine; acting on it is what the plan governs.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-3-1" data-auto="lab" data-lab="3.1" data-label="Lab 3.1" data-n="11" data-session="1">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 3.1 · 25 min</div><h2>Group sequential boundaries</h2><p class="lead small">Add group sequential boundaries to the daily-peeking simulator and measure the false-positive rate and the stopping day.</p><a class="nb" href="../labs/D3_1_group_sequential.ipynb">D3_1_group_sequential.ipynb</a></div><ul class="checklist"><li>Daily peeking with no effect: the false-win rate <span class="min">4 min</span></li><li>The O'Brien-Fleming spending function <span class="min">4 min</span></li><li>Boundaries by simulation, look by look <span class="min">8 min</span></li><li>False-positive rate and power with the boundaries <span class="min">5 min</span></li><li>Expected stopping day with a true effect <span class="min">4 min</span></li><li class="stretch">✱ Stretch: Use weekly looks only and compare power and stopping day</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. The boundary loop is the hard part: the share to stop is a share of all simulated tests, not of those still alive. A participant who uses the alive count gets boundaries that are too low and a false-positive rate near 7%. Full mode runs in under ten seconds.</p></aside>
+</section>
+
+<!-- ======================= SESSION 2 ======================= -->
+<section class="slide section" id="s2" data-auto="section" data-session="2" data-n="12">
+  <div class="kicker">Session 2</div>
+  <h1>Always-valid tests</h1>
+  <ul class="bullets outcomes"><li>Compute a mixture sequential probability ratio statistic</li><li>Measure its false-positive rate under daily monitoring</li><li>Compare stopping times and power with the group sequential test</li></ul>
+  <div class="sess-no">02</div>
+</section>
+
+<section class="slide" id="always-valid-idea" data-lo="LO3" data-label="Always valid" data-n="13" data-session="2">
+  <div class="kicker">The other family</div>
+  <h2>An always-valid test lets you look and stop at any time</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li>No plan of looks, no maximum duration.</li>
+      <li>Its statistic is a likelihood ratio averaged over possible effects; under no effect it never drifts upward on average.</li>
+      <li>So the chance it ever reaches 1 / alpha is at most alpha.</li>
+    </ul>
+    <div class="card c-purple"><h4>Names you will meet</h4><p class="small mb0">mixture SPRT (mSPRT), confidence sequences, anytime-valid inference.</p></div>
+  </div>
+  <aside class="notes"><p>Johari, Pekelis and Walsh brought the mixture SPRT to A/B testing (course sources). GrowthBook's documentation says its sequential testing uses asymptotic confidence sequences (Waudby-Smith and colleagues), close to the generalised anytime-valid approach Spotify compared. The martingale argument is Ville's inequality; one sentence is enough for this room.</p></aside>
+</section>
+
+<section class="slide" id="msprt-formula" data-lo="LO3" data-label="mSPRT" data-n="14" data-session="2">
+  <div class="kicker">Lab 3.2, step 1</div>
+  <h2>The mSPRT statistic needs the estimate, its variance and a width</h2>
+  <pre class="code" data-file="msprt"><code class="language-python">v = se**<span class="hljs-number">2</span>
+lam = sqrt(v / (v + tau**<span class="hljs-number">2</span>)) * exp(tau**<span class="hljs-number">2</span> * est**<span class="hljs-number">2</span> / (<span class="hljs-number">2</span> * v * (v + tau**<span class="hljs-number">2</span>)))
+stop = lam &gt;= <span class="hljs-number">1</span> / alpha                     <span class="hljs-comment"># 20 for alpha = 0.05</span></code></pre>
+  <ul class="bullets small mt-s">
+    <li><b>tau</b>, the mixture width, says which effects the test is tuned to: here 0.08 orders, the effect we hope for.</li>
+    <li>Platforms expose it as a tuning parameter; GrowthBook's default is 5,000 observations.</li>
+  </ul>
+  <aside class="notes"><p>The formula is for a normal estimate with known variance, which holds well for differences in means at these sizes. GrowthBook parameterises the width as the sample size at which the interval is narrowest; its documentation advises setting it near the sample size at which decisions are usually made.</p></aside>
+</section>
+
+<section class="slide" id="msprt-result" data-lo="LO3" data-label="Its price" data-n="15" data-session="2">
+  <div class="kicker">Lab 3.2, full mode</div>
+  <h2>Always valid, and far less powerful on a 28-day test</h2>
+  <table class="t">
+    <tr><th>Design, daily looks</th><th class="num">False-positive rate</th><th class="num">Power</th><th class="num">Mean stopping day</th></tr>
+    <tr><td>Group sequential (O'Brien-Fleming)</td><td class="num">0.052</td><td class="num">0.759</td><td class="num">21.1</td></tr>
+    <tr class="hl"><td>mSPRT, tau = 0.08</td><td class="num">0.014</td><td class="num">0.459</td><td class="num">23.1</td></tr>
+    <tr><td>mSPRT, tau = 0.04</td><td class="num">0.004</td><td class="num">0.333</td><td class="num">25.5</td></tr>
+    <tr><td>mSPRT, tau = 0.32</td><td class="num">0.018</td><td class="num">0.378</td><td class="num">23.3</td></tr>
+  </table>
+  <p class="small mt-s">The always-valid test spends far less than its 5%: it is built to stay valid beyond day 28 too.</p>
+  <aside class="notes"><p>Numbers from the solution of Lab 3.2. The always-valid test's false-positive rate over 28 days is well below 5% because its guarantee covers an unlimited horizon; that unused alpha is the power it gives up. Spotify's comparison reached the same conclusion: when the maximum sample size can be estimated, the group sequential test has the highest power.</p></aside>
+</section>
+
+<section class="slide" id="choose-family" data-lo="LO3" data-label="Choosing" data-n="16" data-session="2">
+  <div class="kicker">Choosing</div>
+  <h2>Choose by what you can promise in advance</h2>
+  <table class="t small">
+    <tr><th>If</th><th>Use</th></tr>
+    <tr><td>The maximum duration and the looks can be fixed</td><td>Group sequential: more power for that plan</td></tr>
+    <tr><td>People will look whenever they like, and stop whenever</td><td>Always valid: the guarantee survives any behaviour</td></tr>
+    <tr><td>One look at the end is enough</td><td>The fixed test: the most power of all</td></tr>
+  </table>
+  <div class="callout tip mt"><b>For the capstone.</b> The sequential plan names its family and gives the reason in one line.</div>
+  <aside class="notes"><p>Sufrah's culture of daily dashboard checks is a real input: if the board cannot stop people acting on day-5 numbers, an always-valid display may be the honest choice despite the power cost.</p></aside>
+</section>
+
+<section class="slide" id="check-avi" data-lo="LO3" data-n="17" data-session="2">
+  <div class="kicker">Checkpoint</div>
+  <h2>Which design for a test nobody can stop people watching?</h2>
+  <div class="quiz" data-type="single" data-lo="LO3" data-id="check-avi-q1">
+    <p class="lead">The Luqma team will check results on a public dashboard several times a day and may stop at any moment. The test has no fixed end date. Which design keeps the false-win rate at 5%?</p>
+    <div class="opts">
+      <div class="opt" data-why="Assumes a stricter fixed threshold solves repeated looks, without knowing how many there will be" data-k="A">A fixed test at alpha = 0.01</div>
+      <div class="opt" data-why="Needs looks and a maximum fixed in advance, which this team cannot promise" data-k="B">A group sequential test with daily looks</div>
+      <div class="opt" data-why="Corrects for a known number of tests, but the number of looks is unknown" data-k="C">A Bonferroni correction over the expected number of looks</div>
+      <div class="opt" data-ok data-k="D">An always-valid test such as mSPRT</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> Only an always-valid test keeps its error rate whatever the number and timing of looks and with no fixed end.</div>
+  </div>
+  <aside class="notes"><p>Answer: D. Then ask what it costs: power, as the table showed.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-3-2" data-auto="lab" data-lab="3.2" data-label="Lab 3.2" data-n="18" data-session="2">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 3.2 · 25 min</div><h2>An always-valid test on the same simulator</h2><p class="lead small">Run an always-valid sequential test on the same simulator and compare its error rate and stopping times with the group sequential design.</p><a class="nb" href="../labs/D3_2_always_valid.ipynb">D3_2_always_valid.ipynb</a></div><ul class="checklist"><li>The mSPRT statistic for a difference in means <span class="min">7 min</span></li><li>False-positive rate under daily looks <span class="min">5 min</span></li><li>Power and stopping day with a true effect <span class="min">5 min</span></li><li>The mixture width: three values <span class="min">4 min</span></li><li>One table: fixed, GST, always-valid <span class="min">4 min</span></li><li class="stretch">✱ Stretch: Turn the statistic into an always-valid interval and plot it</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. Step 5 reads Lab 3.1's results from data/reference, so nobody needs to have finished 3.1. Common error: using the z statistic in place of the estimate and its variance in the formula, which gives Λ for a standardised effect and a tau with no meaning.</p></aside>
+</section>
+
+<!-- ======================= SESSION 3 ======================= -->
+<section class="slide section" id="s3" data-auto="section" data-session="3" data-n="19">
+  <div class="kicker">Session 3</div>
+  <h1>Interference in marketplaces</h1>
+  <ul class="bullets outcomes"><li>Explain how shared couriers break the no-interference assumption</li><li>Measure the naive effect of a customer-randomised dispatch test</li><li>Compare it with the global effect and report the bias</li></ul>
+  <div class="sess-no">03</div>
+</section>
+
+<section class="slide" id="shared-couriers" data-lo="LO5" data-label="Shared couriers" data-n="20" data-session="3">
+  <div class="kicker">Interference</div>
+  <h2>In a marketplace, one customer's treatment changes another's outcome</h2>
+  <div class="flow">
+    <div class="step c-teal"><b>Treated order</b>Goes to the next free courier first</div>
+    <div class="arrow">→</div>
+    <div class="step c-amber"><b>Same couriers</b>Busy with treated orders</div>
+    <div class="arrow">→</div>
+    <div class="step c-coral"><b>Control order</b>Waits longer than it would without the test</div>
+  </div>
+  <div class="callout warn mt"><b>No interference is an assumption.</b> A randomised comparison is unbiased only if a unit's outcome depends on its own treatment alone.</div>
+  <aside class="notes"><p>The assumption has a name, SUTVA (stable unit treatment value). It fails whenever units share a limited resource: couriers, kitchen capacity, a promotion budget, inventory, a ranking slot.</p></aside>
+</section>
+
+<section class="slide" id="naive-dispatch" data-lo="LO5" data-label="The naive test" data-n="21" data-session="3">
+  <div class="kicker">Lab 3.3, the customer-randomised test</div>
+  <h2>T-301 says treated orders arrive ten minutes sooner</h2>
+  <div class="cols cols-2">
+    <div class="stat"><div class="big">-10.4 min</div><div class="lbl">delivery time, treated minus control, mean of 30 simulated runs</div></div>
+    <div class="stat"><div class="big">+4.4 points</div><div class="lbl">conversion, orders per session</div></div>
+  </div>
+  <p class="small mt">Six cities, 14 operating hours a day, 14 days. Half the customers on the new dispatch rule.</p>
+  <aside class="notes"><p>Numbers from Lab 3.3, full mode, 30 runs (standard deviation between runs 0.14 minutes). Ask the room whether Joud should roll it out: most will say yes. The next slide is why not.</p></aside>
+</section>
+
+<section class="slide" id="global-vs-naive" data-lo="LO5" data-label="The bias" data-n="22" data-session="3">
+  <div class="kicker">Lab 3.3, step 4</div>
+  <h2>Run for everyone, the rule saves 1.8 minutes, not 10.4</h2>
+  <div class="bars">
+    <div class="row"><span>Naive, customer-randomised</span><div class="bar c-coral" style="--w:100%"></div><span class="val">-10.4 min</span></div>
+    <div class="row"><span>Global, all against none</span><div class="bar c-teal" style="--w:17%"></div><span class="val">-1.8 min</span></div>
+    <div class="row"><span>Bias</span><div class="bar c-purple" style="--w:83%"></div><span class="val">-8.6 min</span></div>
+  </div>
+  <p class="small mt">Conversion: +4.4 points naive, +0.7 global. The naive test overstates the delivery gain 5.8 times.</p>
+  <aside class="notes"><p>Priority does not create couriers: it moves waiting from control to treated orders, so the difference counts the transfer twice. Only the batching gain, which exists when a whole city-hour runs the rule, is real. The stretch shows that the naive effect also changes with the share treated.</p></aside>
+</section>
+
+<section class="slide" id="memo-part1" data-lo="LO5" data-label="The memo" data-n="23" data-session="3">
+  <div class="kicker">LO5's evidence, first half</div>
+  <h2>The memo states the claim, the real effect and why they differ</h2>
+  <div class="card c-navy flat"><p class="small mb0">"The customer-randomised test showed treated orders arriving 10.4 minutes sooner. Run for everyone, the simulator gives a gain of only 1.8 minutes. The test overstated the gain by 8.6 minutes because treated and control customers share couriers: the rule moved waiting from control orders to treated ones."</p></div>
+  <p class="small mt">From the solution of Lab 3.3, step 5, shortened. Lab 3.4 adds the design.</p>
+  <aside class="notes"><p>The memo is written for Joud, not for statisticians: no SUTVA, no potential outcomes, the numbers and one causal sentence.</p></aside>
+</section>
+
+<section class="slide" id="check-interference" data-lo="LO5" data-n="24" data-session="3">
+  <div class="kicker">Checkpoint</div>
+  <h2>Which Sufrah test is most at risk of interference?</h2>
+  <div class="quiz" data-type="single" data-lo="LO5" data-id="check-interference-q1">
+    <p class="lead">Four tests are planned, each randomised by customer. Which result is most likely biased by interference between customers?</p>
+    <div class="opts">
+      <div class="opt" data-why="A change of wording on a screen affects only the customer who sees it" data-k="A">A new wording on the checkout button</div>
+      <div class="opt" data-ok data-k="B">A delivery-fee discount that raises orders at peak hours</div>
+      <div class="opt" data-why="A personal setting changes nothing for other customers" data-k="C">A dark mode for the app</div>
+      <div class="opt" data-why="Search ranking shown to one customer does not use a resource others share, unless supply is scarce" data-k="D">AI-ranked search for one customer's results</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> More treated orders at peak load the same couriers that serve control customers, slowing them: the control arm is changed by the treatment.</div>
+  </div>
+  <aside class="notes"><p>Answer: B. D is a good discussion point: if the AI ranking concentrates orders on a few popular restaurants, kitchen capacity becomes the shared resource.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-3-3" data-auto="lab" data-lab="3.3" data-label="Lab 3.3" data-n="25" data-session="3">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 3.3 · 25 min</div><h2>The bias of a customer-randomised dispatch test</h2><p class="lead small">Measure the bias of a customer-randomised dispatch test in the marketplace simulator against the effect of running the change everywhere.</p><a class="nb" href="../labs/D3_3_courier_interference.ipynb">D3_3_courier_interference.ipynb</a></div><ul class="checklist"><li>Run the customer-randomised test <span class="min">4 min</span></li><li>The naive effect on delivery time and conversion <span class="min">5 min</span></li><li>The global effect: all treated against none <span class="min">6 min</span></li><li>The bias, over 30 runs <span class="min">6 min</span></li><li>Write the first half of the memo <span class="min">4 min</span></li><li class="stretch">✱ Stretch: Treat 10% of customers instead of 50% and see the bias change</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. The simulator runs a 14-day city schedule in a fraction of a second; 30 runs of both designs take a few seconds. Common error: comparing unweighted means of delivery minutes across rows, which gives quiet hours the weight of busy ones; weight by orders.</p></aside>
+</section>
+
+<!-- ======================= SESSION 4 ======================= -->
+<section class="slide section" id="s4" data-auto="section" data-session="4" data-n="26">
+  <div class="kicker">Session 4</div>
+  <h1>Cluster and switchback designs</h1>
+  <ul class="bullets outcomes"><li>Design a city-by-hour switchback</li><li>Estimate its effect with city and hour adjustments</li><li>Simulate its power and the bias from carryover</li></ul>
+  <div class="sess-no">04</div>
+</section>
+
+<section class="slide" id="randomise-the-cluster" data-lo="LO5" data-label="Clusters" data-n="27" data-session="4">
+  <div class="kicker">The fix</div>
+  <h2>Randomise what shares the couriers: the city-hour</h2>
+  <div class="cols cols-2">
+    <div class="card c-teal"><h4>Cluster design</h4><p class="small mb0">Whole cities on the new rule. Six units: hopeless power.</p></div>
+    <div class="card c-cyan"><h4>Switchback</h4><p class="small mb0">Each city switches between rules hour by hour, at random: 6 cities × 14 hours × 14 days = 1,176 blocks.</p></div>
+  </div>
+  <p class="small mt">Inside a block every order has the same rule, so nobody jumps a queue of the other arm.</p>
+  <aside class="notes"><p>Bojinov, Simchi-Levi and Zhao give the design and analysis of switchback experiments (course sources). Delivery platforms use switchbacks for dispatch and pricing for exactly this reason.</p></aside>
+</section>
+
+<section class="slide" id="switchback-schedule" data-lo="LO5" data-label="A schedule" data-n="28" data-session="4">
+  <div class="kicker">Lab 3.4, step 1</div>
+  <h2>One random schedule: Riyadh, day 1</h2>
+  <div class="flow">
+    <div class="step c-teal"><b>Hours 1 to 3</b>new rule</div>
+    <div class="step c-navy"><b>Hours 4 to 6</b>old rule</div>
+    <div class="step c-teal"><b>Hours 7 to 9</b>new rule</div>
+    <div class="step c-navy"><b>Hour 10</b>old rule</div>
+    <div class="step c-teal"><b>Hour 11</b>new rule</div>
+    <div class="step c-navy"><b>Hours 12 to 14</b>old rule</div>
+  </div>
+  <p class="small mt">Each operating hour of each city and day is assigned by a coin flip; runs of the same rule happen by chance. Each city has its own schedule.</p>
+  <aside class="notes"><p>From the solution run (seed 301): 579 of 1,176 blocks treated. The analysis compares treated and control blocks within the same city and the same hour of the day, which removes most of the variance between blocks.</p></aside>
+</section>
+
+<section class="slide" id="switchback-estimate" data-lo="LO5" data-label="Estimate" data-n="29" data-session="4">
+  <div class="kicker">Lab 3.4, step 2</div>
+  <h2>Estimate with city and hour fixed effects, block as the unit</h2>
+  <pre class="code" data-file="estimate"><code class="language-python">fit = smf.ols(<span class="hljs-string">&quot;delivery_min ~ treat + C(city) + C(hour)&quot;</span>,
+              data=blocks).fit(cov_type=<span class="hljs-string">&quot;HC1&quot;</span>)
+fit.params[<span class="hljs-string">&quot;treat&quot;</span>], fit.bse[<span class="hljs-string">&quot;treat&quot;</span>]      <span class="hljs-comment"># one run: -1.19, se 0.30</span></code></pre>
+  <ul class="bullets small mt-s">
+    <li>One row per city-hour block, not per order: the block was randomised.</li>
+    <li>Each block counts once; weight by orders when the decision is about orders.</li>
+  </ul>
+  <aside class="notes"><p>The regression weights every city-hour equally; the global effect of Lab 3.3 weights every order. That is why the switchback's mean estimate, -1.51, sits below the per-order -1.78 in size: busy hours, where the gain is largest, count once like quiet ones.</p></aside>
+</section>
+
+<section class="slide" id="switchback-power" data-lo="LO5" data-label="Power" data-n="30" data-session="4">
+  <div class="kicker">Lab 3.4, full mode, 200 runs each</div>
+  <h2>Seven days give 95% power; the false-win rate stays near 5%</h2>
+  <table class="t">
+    <tr><th class="num">Days</th><th class="num">Mean estimate (min)</th><th class="num">Spread</th><th class="num">Power</th><th class="num">False wins, no effect</th></tr>
+    <tr><td class="num">3</td><td class="num">-1.42</td><td class="num">0.51</td><td class="num">0.80</td><td class="num">0.050</td></tr>
+    <tr class="hl"><td class="num">7</td><td class="num">-1.53</td><td class="num">0.41</td><td class="num">0.95</td><td class="num">0.050</td></tr>
+    <tr><td class="num">14</td><td class="num">-1.51</td><td class="num">0.30</td><td class="num">1.00</td><td class="num">0.035</td></tr>
+  </table>
+  <aside class="notes"><p>LO5's evidence, second half: the power of the new design. The false-win rate is measured with the batching gain set to zero, where the rule has no global effect. With 200 runs the band around 5% is about plus or minus 3 points, so 3.5% is consistent with 5%.</p></aside>
+</section>
+
+<section class="slide" id="carryover" data-lo="LO5" data-label="Carryover" data-n="31" data-session="4">
+  <div class="kicker">Lab 3.4, step 4</div>
+  <h2>Carryover between hours is small in this simulator, so measure it</h2>
+  <div class="cols cols-2">
+    <ul class="bullets small">
+      <li>Unfinished deliveries spill into the next hour, whichever rule it has.</li>
+      <li>Measured: switchback with carryover -1.51 minutes, without -1.49.</li>
+      <li>In a real city the spill can be larger: test two-hour blocks, or drop the first hour after each switch.</li>
+    </ul>
+    <div class="callout note"><b>An honest finding.</b> The design choice here is the weighting, not the block length. Your marketplace may differ: simulate yours.</div>
+  </div>
+  <aside class="notes"><p>The simulator's spill applies to both arms almost equally, which is why the bias is near zero. Do not generalise this number; generalise the method: simulate the design with and without the nuisance and compare.</p></aside>
+</section>
+
+<section class="slide" id="check-switchback" data-lo="LO5" data-n="32" data-session="4">
+  <div class="kicker">Checkpoint</div>
+  <h2>What is the unit of analysis in a switchback?</h2>
+  <div class="quiz" data-type="single" data-lo="LO5" data-id="check-switchback-q1">
+    <p class="lead">Joud's switchback randomised 1,176 city-hour blocks; they contain about 83,000 orders. Ruba computes the standard error from the 83,000 orders as independent rows. What is wrong?</p>
+    <div class="opts">
+      <div class="opt" data-ok data-k="A">The block was randomised, so the standard error must be computed over blocks</div>
+      <div class="opt" data-why="Thinks the problem is the estimate, not its variance; the mean difference can be fine" data-k="B">The estimate is biased by interference</div>
+      <div class="opt" data-why="Confuses a power shortfall with a variance error; more orders do not make them independent" data-k="C">Nothing: more rows give a more precise estimate</div>
+      <div class="opt" data-why="Assumes carryover is the main error, when it is the unit of analysis" data-k="D">The first hour after each switch must always be dropped</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> Orders in one block share the rule and the same couriers; treating them as independent repeats Day 2's ratio-metric mistake at a larger scale.</div>
+  </div>
+  <aside class="notes"><p>Answer: A. Connect to Day 2 session 3: the unit of analysis must match the unit of randomisation.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-3-4" data-auto="lab" data-lab="3.4" data-label="Lab 3.4" data-n="33" data-session="4">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 3.4 · 25 min</div><h2>A city-by-hour switchback and its power</h2><p class="lead small">Design a city-by-hour switchback for the dispatch change and simulate its power.</p><a class="nb" href="../labs/D3_4_switchback_power.ipynb">D3_4_switchback_power.ipynb</a></div><ul class="checklist"><li>One switchback run: blocks and arms <span class="min">4 min</span></li><li>The estimate with city and hour adjustment <span class="min">6 min</span></li><li>Power over 200 runs, with and without an effect <span class="min">7 min</span></li><li>Carryover: the bias of one-hour blocks <span class="min">4 min</span></li><li>Finish the memo: bias and power <span class="min">4 min</span></li><li class="stretch">✱ Stretch: Use two-hour blocks and drop the first hour after a switch</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. The power grid runs 1,200 switchbacks and takes about a minute in full mode; quick mode uses 60 runs per cell. Lab 3.3's results are supplied in data/reference, so this lab starts on its own. The memo it saves, artifacts/T301_memo.md, is LO5's evidence.</p></aside>
+</section>
+
+<section class="slide" id="wrap-up" data-label="Wrap-up" data-n="34" data-session="4">
+  <div class="kicker">Day 3</div>
+  <h2>Three things to keep</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>Plan the looks</h4><p class="small mb0">Daily peeking gave 28% false wins; a spending plan gave 5% and stopped a week early.</p></div>
+    <div class="card c-purple"><h4>Or pay for freedom</h4><p class="small mb0">Always-valid tests survive any looking, at a large cost in power over a fixed horizon.</p></div>
+    <div class="card c-coral"><h4>Randomise what is shared</h4><p class="small mb0">Shared couriers made a 1.8-minute gain look like 10.4.</p></div>
+  </div>
+  <aside class="notes"><p>Ask: which of your team's tests share a resource between treated and control users?</p></aside>
+</section>
+
+<section class="slide dark" id="next" data-label="Next" data-n="35" data-session="4">
+  <div class="kicker">Day 4</div>
+  <h2>Next: deciding, and defending the decision</h2>
+  <ul class="bullets">
+    <li>The Luqma chat-assistant test and its harm guardrail</li>
+    <li>Twenty segments and the false wins hiding in them</li>
+    <li>A one-page recommendation and the review board</li>
+  </ul>
+  <aside class="notes"><p>Ask participants to think about which AI-feature change they would like for the capstone; Lab 4.4 makes the choice.</p></aside>
+</section>
+</div>
+<script type="application/json" id="academy-data">{"v":1,"engine":"1.0.0","build":{"at":"2026-11-15T03:19:28Z","version":"2027.1.0","commit":"843acec"},"course":{"id":"ds-302","code":"DS-302","title":"Online Experiments and A/B Testing","track":"data-science","lang":"en","dir":"ltr","url":"https://sdaiaacademy.github.io/ds-302/","repo":"SDAIAAcademy/ds-302","home":"../index.html"},"deck":{"id":"day3","kind":"day","day":3,"label":"Day 3","title":"Monitoring and interference","prev":"day2.html","next":"day4.html","md":"day3.md","alt":{}},"sessions":[{"n":1,"label":"Session 1","title":"Group sequential designs","slide":"s1","outcomes":["Measure the false-positive rate of daily peeking by simulation","Compute boundaries from an alpha-spending function","Report the false-positive rate, power and expected stopping day of a group sequential test"],"minutes":50,"lab":{"id":"3.1","title":"Group sequential boundaries","minutes":25,"href":"../labs/D3_1_group_sequential.ipynb"}},{"n":2,"label":"Session 2","title":"Always-valid tests","slide":"s2","outcomes":["Compute a mixture sequential probability ratio statistic","Measure its false-positive rate under daily monitoring","Compare stopping times and power with the group sequential test"],"minutes":50,"lab":{"id":"3.2","title":"An always-valid test on the same simulator","minutes":25,"href":"../labs/D3_2_always_valid.ipynb"}},{"n":3,"label":"Session 3","title":"Interference in marketplaces","slide":"s3","outcomes":["Explain how shared couriers break the no-interference assumption","Measure the naive effect of a customer-randomised dispatch test","Compare it with the global effect and report the bias"],"minutes":50,"lab":{"id":"3.3","title":"The bias of a customer-randomised dispatch test","minutes":25,"href":"../labs/D3_3_courier_interference.ipynb"}},{"n":4,"label":"Session 4","title":"Cluster and switchback designs","slide":"s4","outcomes":["Design a city-by-hour switchback","Estimate its effect with city and hour adjustments","Simulate its power and the bias from carryover"],"minutes":50,"lab":{"id":"3.4","title":"A city-by-hour switchback and its power","minutes":25,"href":"../labs/D3_4_switchback_power.ipynb"}}],"slides":[{"id":"title","n":1,"title":"Monitoring and interference","kind":"title","session":0,"hash":"a49a261c","md":"#### [day3#title] Monitoring and interference\n\n*SDAIA Academy · Online Experiments and A/B Testing*\n\nDay 3: Watch a test every day without inventing wins, and test a marketplace where customers share couriers\n\nData Science Track · 4 teaching days + capstone day · 4 sessions · 4 labs · DS-302","notes":"Open with a confession many teams can make: \"We look at the dashboard every morning.\" Ask who stops tests when the p-value turns green. Today measures what that costs, then turns to a test that was wrong for a different reason: the customers were not independent.","minutes":null,"lo":[]},{"id":"agenda","n":2,"title":"Monitoring and interference","kind":"content","session":0,"hash":"51f99712","md":"#### [day3#agenda] Monitoring and interference\n\n*Today*\n\n- **Session 1 · Group sequential designs**: Looking every day and stopping at the first p below 0.05 inflates false wins; spending alpha across looks does not\n- **Session 2 · Always-valid tests**: A test that stays valid at every look, whenever you stop, at a price in power\n- **Session 3 · Interference in marketplaces**: When treated and control customers share couriers, a customer-randomised test measures stealing, not the change\n- **Session 4 · Cluster and switchback designs**: Randomise what shares the couriers, city by hour, and pay for it in power","notes":"Two halves: monitoring (sessions 1 and 2, the daily-peeking simulator) and interference (sessions 3 and 4, the marketplace simulator). Both simulators are in sufrah.py and run in seconds.","minutes":null,"lo":[]},{"id":"review-day2","n":3,"title":"Which change narrows T-101's interval without changing the estimand?","kind":"quiz","session":0,"hash":"fdf7acd9","md":"#### [day3#review-day2] Which change narrows T-101's interval without changing the estimand?\n\n*Review of Day 2*\n\n**Question:** Ruba must narrow the interval of revenue per triggered customer in T-101 and keep estimating exactly the effect on revenue. Which method does that?\n\n- A. Capping each order at the 99th percentile\n- B. Regression adjustment on revenue in the 28 pre-period days\n- C. Dropping the customers with the largest orders\n- D. Switching to revenue per order","notes":"Answer: B. Capping trades a small bias for less noise and is fine when stated; the question asked for the same estimand.","minutes":null,"lo":["LO1"]},{"id":"s1","n":4,"title":"Group sequential designs","kind":"section","session":1,"hash":"001c593a","md":"#### [day3#s1] Group sequential designs\n\n*Session 1*\n\n- Measure the false-positive rate of daily peeking by simulation\n- Compute boundaries from an alpha-spending function\n- Report the false-positive rate, power and expected stopping day of a group sequential test","notes":"","minutes":null,"lo":["LO3"]},{"id":"peeking-cost","n":5,"title":"Stopping at the first p below 0.05 gives 28% false wins","kind":"content","session":1,"hash":"3f1748ea","md":"#### [day3#peeking-cost] Stopping at the first p below 0.05 gives 28% false wins\n\n*Lab 3.1, step 1*\n\n**28.1%** of 4,000 simulated tests with no effect cross 1.96 on at least one of 28 daily looks\n\n- Each look is another chance for noise to cross the line.\n- The daily z values are correlated, so the rate is not 1 - 0.95²⁸, but it is still far above 5%.\n- The fixed test, one look on day 28: 5.3%.","notes":"The simulator: orders per customer, mean 5.0, standard deviation 6.0, 3,000 new customers per arm each day, 28 days. Numbers from the solution run of Lab 3.1, full mode. DS-205 measured this inflation; today repairs it.","minutes":null,"lo":["LO3"]},{"id":"alpha-spending","n":6,"title":"Spend the 5% across the looks, on a schedule fixed in advance","kind":"content","session":1,"hash":"45fdb967","md":"#### [day3#alpha-spending] Spend the 5% across the looks, on a schedule fixed in advance\n\n*The idea*\n\n```python\n# file: Lan-DeMets, O'Brien-Fleming type\ndef obf(t, alpha=0.05):   # t: share of the plan\n    z = norm.ppf(1 - alpha / 2)\n    return 2 - 2 * norm.cdf(z / sqrt(t))\n```\n\n| Day | Alpha spent |\n| --- | --- |\n| 7 | 0.0001 |\n| 14 | 0.0056 |\n| 21 | 0.0236 |\n| 28 | 0.0500 |\n\nAlmost nothing early, when the data is thin; nearly all at the end.","notes":"Lan and DeMets introduced spending functions so the looks need not be equally spaced. Spotify's engineering blog describes its platform as using group sequential tests with Lan-DeMets alpha spending (course sources). A Pocock-type function spends evenly instead: easier early stops, a stricter last look.","minutes":null,"lo":["LO3"]},{"id":"boundaries-by-simulation","n":7,"title":"Compute each day's boundary by simulation","kind":"content","session":1,"hash":"55941ede","md":"#### [day3#boundaries-by-simulation] Compute each day's boundary by simulation\n\n*Lab 3.1, step 3*\n\n1. Simulate 40,000 tests with no effect.\n2. At day k, among tests not yet stopped, find the |z| that stops exactly the alpha spent at day k, as a share of all tests.\n3. Stop those tests; move to day k + 1.\n\n| Item | Value |\n| --- | --- |\n| Day 7 | 3.80 |\n| Day 14 | 2.91 |\n| Day 21 | 2.44 |\n| Day 28 | 2.14 |","notes":"Days 1 to 6 have an infinite boundary: the alpha spent there is less than one test in 40,000. Exact boundaries come from numerical integration (R's ldbounds, or gsDesign); the simulation gives the same idea in ten lines and works for any spending function. The last boundary, 2.14, is above 1.96 because a little alpha was spent on earlier looks.","minutes":null,"lo":["LO3"]},{"id":"gst-result","n":8,"title":"Five percent false wins, nearly the same power, a week saved","kind":"content","session":1,"hash":"93d34746","md":"#### [day3#gst-result] Five percent false wins, nearly the same power, a week saved\n\n*Lab 3.1, full mode, fresh simulations*\n\n| Design | False-positive rate | Power, true lift 1.6% | Mean stopping day |\n| --- | --- | --- | --- |\n| Fixed, one look on day 28 | 0.053 | 0.777 | 28 |\n| Daily peeking at 1.96 | 0.281 | not valid | not valid |\n| Group sequential, O'Brien-Fleming | 0.052 | 0.759 | 21.1 |","notes":"LO3's evidence: error rates at or below the nominal level, with expected stopping times. 0.052 is within simulation error of 0.05 (band plus or minus 0.007 with 4,000 simulations). The cost of 28 looks is two points of power; the gain is stopping about a week early when the effect is real.","minutes":null,"lo":["LO3"]},{"id":"gst-rules","n":9,"title":"A group sequential plan is a contract written before day 1","kind":"content","session":1,"hash":"6483e6fd","md":"#### [day3#gst-rules] A group sequential plan is a contract written before day 1\n\n*What the pre-registration fixes*\n\n- **The looks.** How many and when, or the information fractions.\n- **The spending.** O'Brien-Fleming, Pocock or another function, with alpha.\n- **The maximum.** The longest the test may run: 28 days for T-101.\n\n> **Guardrails can stop a test too.** A harm guardrail is usually monitored with its own, looser boundary: stopping for harm should be easy.","notes":"Ask the room what happens if someone adds a look on day 10 that was not in the plan. With a spending function the plan can absorb an unplanned look, provided the information fraction is recomputed; without one, the error rate is no longer known.","minutes":null,"lo":["LO3"]},{"id":"check-gst","n":10,"title":"Day 5: the dashboard is green","kind":"quiz","session":1,"hash":"bd811b5c","md":"#### [day3#check-gst] Day 5: the dashboard is green\n\n*Checkpoint*\n\n**Question:** A 28-day test with an O'Brien-Fleming plan shows z = 2.4 on day 5. The boundary on day 5 is infinite. Yazeed wants to launch. What do you tell him?\n\n- A. The result is significant at 5%, so launch\n- B. We should not have looked at day 5 at all\n- C. Keep running: the evidence has not crossed the planned boundary\n- D. Switch to a Pocock plan, whose day-5 boundary is lower","notes":"Answer: C. Remind the room that the look itself is fine; acting on it is what the plan governs.","minutes":null,"lo":["LO3"]},{"id":"lab-3-1","n":11,"title":"Group sequential boundaries","kind":"lab","session":1,"hash":"838855e1","md":"#### [day3#lab-3-1] Group sequential boundaries\n\nLab 3.1 · 25 min\n\nAdd group sequential boundaries to the daily-peeking simulator and measure the false-positive rate and the stopping day.\n\n[D3_1_group_sequential.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D3_1_group_sequential.ipynb)\n\n- [ ] Daily peeking with no effect: the false-win rate (4 min)\n- [ ] The O'Brien-Fleming spending function (4 min)\n- [ ] Boundaries by simulation, look by look (8 min)\n- [ ] False-positive rate and power with the boundaries (5 min)\n- [ ] Expected stopping day with a true effect (4 min)\n- [ ] ✱ Stretch: Use weekly looks only and compare power and stopping day","notes":"AI-tutor lab. The boundary loop is the hard part: the share to stop is a share of all simulated tests, not of those still alive. A participant who uses the alive count gets boundaries that are too low and a false-positive rate near 7%. Full mode runs in under ten seconds.","minutes":null,"lo":[]},{"id":"s2","n":12,"title":"Always-valid tests","kind":"section","session":2,"hash":"b29be8d3","md":"#### [day3#s2] Always-valid tests\n\n*Session 2*\n\n- Compute a mixture sequential probability ratio statistic\n- Measure its false-positive rate under daily monitoring\n- Compare stopping times and power with the group sequential test","notes":"","minutes":null,"lo":["LO3"]},{"id":"always-valid-idea","n":13,"title":"An always-valid test lets you look and stop at any time","kind":"content","session":2,"hash":"2081d21f","md":"#### [day3#always-valid-idea] An always-valid test lets you look and stop at any time\n\n*The other family*\n\n- No plan of looks, no maximum duration.\n- Its statistic is a likelihood ratio averaged over possible effects; under no effect it never drifts upward on average.\n- So the chance it ever reaches 1 / alpha is at most alpha.\n\n- **Names you will meet.** mixture SPRT (mSPRT), confidence sequences, anytime-valid inference.","notes":"Johari, Pekelis and Walsh brought the mixture SPRT to A/B testing (course sources). GrowthBook's documentation says its sequential testing uses asymptotic confidence sequences (Waudby-Smith and colleagues), close to the generalised anytime-valid approach Spotify compared. The martingale argument is Ville's inequality; one sentence is enough for this room.","minutes":null,"lo":["LO3"]},{"id":"msprt-formula","n":14,"title":"The mSPRT statistic needs the estimate, its variance and a width","kind":"content","session":2,"hash":"0d03f976","md":"#### [day3#msprt-formula] The mSPRT statistic needs the estimate, its variance and a width\n\n*Lab 3.2, step 1*\n\n```python\n# file: msprt\nv = se**2\nlam = sqrt(v / (v + tau**2)) * exp(tau**2 * est**2 / (2 * v * (v + tau**2)))\nstop = lam >= 1 / alpha                     # 20 for alpha = 0.05\n```\n\n- **tau**, the mixture width, says which effects the test is tuned to: here 0.08 orders, the effect we hope for.\n- Platforms expose it as a tuning parameter; GrowthBook's default is 5,000 observations.","notes":"The formula is for a normal estimate with known variance, which holds well for differences in means at these sizes. GrowthBook parameterises the width as the sample size at which the interval is narrowest; its documentation advises setting it near the sample size at which decisions are usually made.","minutes":null,"lo":["LO3"]},{"id":"msprt-result","n":15,"title":"Always valid, and far less powerful on a 28-day test","kind":"content","session":2,"hash":"794c2a0c","md":"#### [day3#msprt-result] Always valid, and far less powerful on a 28-day test\n\n*Lab 3.2, full mode*\n\n| Design, daily looks | False-positive rate | Power | Mean stopping day |\n| --- | --- | --- | --- |\n| Group sequential (O'Brien-Fleming) | 0.052 | 0.759 | 21.1 |\n| mSPRT, tau = 0.08 | 0.014 | 0.459 | 23.1 |\n| mSPRT, tau = 0.04 | 0.004 | 0.333 | 25.5 |\n| mSPRT, tau = 0.32 | 0.018 | 0.378 | 23.3 |\n\nThe always-valid test spends far less than its 5%: it is built to stay valid beyond day 28 too.","notes":"Numbers from the solution of Lab 3.2. The always-valid test's false-positive rate over 28 days is well below 5% because its guarantee covers an unlimited horizon; that unused alpha is the power it gives up. Spotify's comparison reached the same conclusion: when the maximum sample size can be estimated, the group sequential test has the highest power.","minutes":null,"lo":["LO3"]},{"id":"choose-family","n":16,"title":"Choose by what you can promise in advance","kind":"content","session":2,"hash":"8575df30","md":"#### [day3#choose-family] Choose by what you can promise in advance\n\n*Choosing*\n\n| If | Use |\n| --- | --- |\n| The maximum duration and the looks can be fixed | Group sequential: more power for that plan |\n| People will look whenever they like, and stop whenever | Always valid: the guarantee survives any behaviour |\n| One look at the end is enough | The fixed test: the most power of all |\n\n> **For the capstone.** The sequential plan names its family and gives the reason in one line.","notes":"Sufrah's culture of daily dashboard checks is a real input: if the board cannot stop people acting on day-5 numbers, an always-valid display may be the honest choice despite the power cost.","minutes":null,"lo":["LO3"]},{"id":"check-avi","n":17,"title":"Which design for a test nobody can stop people watching?","kind":"quiz","session":2,"hash":"937e7ddc","md":"#### [day3#check-avi] Which design for a test nobody can stop people watching?\n\n*Checkpoint*\n\n**Question:** The Luqma team will check results on a public dashboard several times a day and may stop at any moment. The test has no fixed end date. Which design keeps the false-win rate at 5%?\n\n- A. A fixed test at alpha = 0.01\n- B. A group sequential test with daily looks\n- C. A Bonferroni correction over the expected number of looks\n- D. An always-valid test such as mSPRT","notes":"Answer: D. Then ask what it costs: power, as the table showed.","minutes":null,"lo":["LO3"]},{"id":"lab-3-2","n":18,"title":"An always-valid test on the same simulator","kind":"lab","session":2,"hash":"44538092","md":"#### [day3#lab-3-2] An always-valid test on the same simulator\n\nLab 3.2 · 25 min\n\nRun an always-valid sequential test on the same simulator and compare its error rate and stopping times with the group sequential design.\n\n[D3_2_always_valid.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D3_2_always_valid.ipynb)\n\n- [ ] The mSPRT statistic for a difference in means (7 min)\n- [ ] False-positive rate under daily looks (5 min)\n- [ ] Power and stopping day with a true effect (5 min)\n- [ ] The mixture width: three values (4 min)\n- [ ] One table: fixed, GST, always-valid (4 min)\n- [ ] ✱ Stretch: Turn the statistic into an always-valid interval and plot it","notes":"AI-tutor lab. Step 5 reads Lab 3.1's results from data/reference, so nobody needs to have finished 3.1. Common error: using the z statistic in place of the estimate and its variance in the formula, which gives Λ for a standardised effect and a tau with no meaning.","minutes":null,"lo":[]},{"id":"s3","n":19,"title":"Interference in marketplaces","kind":"section","session":3,"hash":"b38c8d43","md":"#### [day3#s3] Interference in marketplaces\n\n*Session 3*\n\n- Explain how shared couriers break the no-interference assumption\n- Measure the naive effect of a customer-randomised dispatch test\n- Compare it with the global effect and report the bias","notes":"","minutes":null,"lo":["LO5"]},{"id":"shared-couriers","n":20,"title":"In a marketplace, one customer's treatment changes another's outcome","kind":"content","session":3,"hash":"e3731b23","md":"#### [day3#shared-couriers] In a marketplace, one customer's treatment changes another's outcome\n\n*Interference*\n\n1. **Treated order** Goes to the next free courier first\n2. **Same couriers** Busy with treated orders\n3. **Control order** Waits longer than it would without the test\n\n> **No interference is an assumption.** A randomised comparison is unbiased only if a unit's outcome depends on its own treatment alone.","notes":"The assumption has a name, SUTVA (stable unit treatment value). It fails whenever units share a limited resource: couriers, kitchen capacity, a promotion budget, inventory, a ranking slot.","minutes":null,"lo":["LO5"]},{"id":"naive-dispatch","n":21,"title":"T-301 says treated orders arrive ten minutes sooner","kind":"content","session":3,"hash":"2112f99c","md":"#### [day3#naive-dispatch] T-301 says treated orders arrive ten minutes sooner\n\n*Lab 3.3, the customer-randomised test*\n\n- **-10.4 min** delivery time, treated minus control, mean of 30 simulated runs\n- **+4.4 points** conversion, orders per session\n\nSix cities, 14 operating hours a day, 14 days. Half the customers on the new dispatch rule.","notes":"Numbers from Lab 3.3, full mode, 30 runs (standard deviation between runs 0.14 minutes). Ask the room whether Joud should roll it out: most will say yes. The next slide is why not.","minutes":null,"lo":["LO5"]},{"id":"global-vs-naive","n":22,"title":"Run for everyone, the rule saves 1.8 minutes, not 10.4","kind":"content","session":3,"hash":"3494a866","md":"#### [day3#global-vs-naive] Run for everyone, the rule saves 1.8 minutes, not 10.4\n\n*Lab 3.3, step 4*\n\n| Item | Value |\n| --- | --- |\n| Naive, customer-randomised | -10.4 min |\n| Global, all against none | -1.8 min |\n| Bias | -8.6 min |\n\nConversion: +4.4 points naive, +0.7 global. The naive test overstates the delivery gain 5.8 times.","notes":"Priority does not create couriers: it moves waiting from control to treated orders, so the difference counts the transfer twice. Only the batching gain, which exists when a whole city-hour runs the rule, is real. The stretch shows that the naive effect also changes with the share treated.","minutes":null,"lo":["LO5"]},{"id":"memo-part1","n":23,"title":"The memo states the claim, the real effect and why they differ","kind":"content","session":3,"hash":"9353ce92","md":"#### [day3#memo-part1] The memo states the claim, the real effect and why they differ\n\n*LO5's evidence, first half*\n\n- \"The customer-randomised test showed treated orders arriving 10.4 minutes sooner. Run for everyone, the simulator gives a gain of only 1.8 minutes. The test overstated the gain by 8.6 minutes because treated and control customers share couriers: the rule moved waiting from control orders to treated ones.\"\n\nFrom the solution of Lab 3.3, step 5, shortened. Lab 3.4 adds the design.","notes":"The memo is written for Joud, not for statisticians: no SUTVA, no potential outcomes, the numbers and one causal sentence.","minutes":null,"lo":["LO5"]},{"id":"check-interference","n":24,"title":"Which Sufrah test is most at risk of interference?","kind":"quiz","session":3,"hash":"d219b332","md":"#### [day3#check-interference] Which Sufrah test is most at risk of interference?\n\n*Checkpoint*\n\n**Question:** Four tests are planned, each randomised by customer. Which result is most likely biased by interference between customers?\n\n- A. A new wording on the checkout button\n- B. A delivery-fee discount that raises orders at peak hours\n- C. A dark mode for the app\n- D. AI-ranked search for one customer's results","notes":"Answer: B. D is a good discussion point: if the AI ranking concentrates orders on a few popular restaurants, kitchen capacity becomes the shared resource.","minutes":null,"lo":["LO5"]},{"id":"lab-3-3","n":25,"title":"The bias of a customer-randomised dispatch test","kind":"lab","session":3,"hash":"fb9f4bd0","md":"#### [day3#lab-3-3] The bias of a customer-randomised dispatch test\n\nLab 3.3 · 25 min\n\nMeasure the bias of a customer-randomised dispatch test in the marketplace simulator against the effect of running the change everywhere.\n\n[D3_3_courier_interference.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D3_3_courier_interference.ipynb)\n\n- [ ] Run the customer-randomised test (4 min)\n- [ ] The naive effect on delivery time and conversion (5 min)\n- [ ] The global effect: all treated against none (6 min)\n- [ ] The bias, over 30 runs (6 min)\n- [ ] Write the first half of the memo (4 min)\n- [ ] ✱ Stretch: Treat 10% of customers instead of 50% and see the bias change","notes":"AI-tutor lab. The simulator runs a 14-day city schedule in a fraction of a second; 30 runs of both designs take a few seconds. Common error: comparing unweighted means of delivery minutes across rows, which gives quiet hours the weight of busy ones; weight by orders.","minutes":null,"lo":[]},{"id":"s4","n":26,"title":"Cluster and switchback designs","kind":"section","session":4,"hash":"6f95fc6a","md":"#### [day3#s4] Cluster and switchback designs\n\n*Session 4*\n\n- Design a city-by-hour switchback\n- Estimate its effect with city and hour adjustments\n- Simulate its power and the bias from carryover","notes":"","minutes":null,"lo":["LO5"]},{"id":"randomise-the-cluster","n":27,"title":"Randomise what shares the couriers: the city-hour","kind":"content","session":4,"hash":"b47a52f8","md":"#### [day3#randomise-the-cluster] Randomise what shares the couriers: the city-hour\n\n*The fix*\n\n- **Cluster design.** Whole cities on the new rule. Six units: hopeless power.\n- **Switchback.** Each city switches between rules hour by hour, at random: 6 cities × 14 hours × 14 days = 1,176 blocks.\n\nInside a block every order has the same rule, so nobody jumps a queue of the other arm.","notes":"Bojinov, Simchi-Levi and Zhao give the design and analysis of switchback experiments (course sources). Delivery platforms use switchbacks for dispatch and pricing for exactly this reason.","minutes":null,"lo":["LO5"]},{"id":"switchback-schedule","n":28,"title":"One random schedule: Riyadh, day 1","kind":"content","session":4,"hash":"111a947f","md":"#### [day3#switchback-schedule] One random schedule: Riyadh, day 1\n\n*Lab 3.4, step 1*\n\n1. **Hours 1 to 3** new rule\n2. **Hours 4 to 6** old rule\n3. **Hours 7 to 9** new rule\n4. **Hour 10** old rule\n5. **Hour 11** new rule\n6. **Hours 12 to 14** old rule\n\nEach operating hour of each city and day is assigned by a coin flip; runs of the same rule happen by chance. Each city has its own schedule.","notes":"From the solution run (seed 301): 579 of 1,176 blocks treated. The analysis compares treated and control blocks within the same city and the same hour of the day, which removes most of the variance between blocks.","minutes":null,"lo":["LO5"]},{"id":"switchback-estimate","n":29,"title":"Estimate with city and hour fixed effects, block as the unit","kind":"content","session":4,"hash":"1d877ac0","md":"#### [day3#switchback-estimate] Estimate with city and hour fixed effects, block as the unit\n\n*Lab 3.4, step 2*\n\n```python\n# file: estimate\nfit = smf.ols(\"delivery_min ~ treat + C(city) + C(hour)\",\n              data=blocks).fit(cov_type=\"HC1\")\nfit.params[\"treat\"], fit.bse[\"treat\"]      # one run: -1.19, se 0.30\n```\n\n- One row per city-hour block, not per order: the block was randomised.\n- Each block counts once; weight by orders when the decision is about orders.","notes":"The regression weights every city-hour equally; the global effect of Lab 3.3 weights every order. That is why the switchback's mean estimate, -1.51, sits below the per-order -1.78 in size: busy hours, where the gain is largest, count once like quiet ones.","minutes":null,"lo":["LO5"]},{"id":"switchback-power","n":30,"title":"Seven days give 95% power; the false-win rate stays near 5%","kind":"content","session":4,"hash":"96173622","md":"#### [day3#switchback-power] Seven days give 95% power; the false-win rate stays near 5%\n\n*Lab 3.4, full mode, 200 runs each*\n\n| Days | Mean estimate (min) | Spread | Power | False wins, no effect |\n| --- | --- | --- | --- | --- |\n| 3 | -1.42 | 0.51 | 0.80 | 0.050 |\n| 7 | -1.53 | 0.41 | 0.95 | 0.050 |\n| 14 | -1.51 | 0.30 | 1.00 | 0.035 |","notes":"LO5's evidence, second half: the power of the new design. The false-win rate is measured with the batching gain set to zero, where the rule has no global effect. With 200 runs the band around 5% is about plus or minus 3 points, so 3.5% is consistent with 5%.","minutes":null,"lo":["LO5"]},{"id":"carryover","n":31,"title":"Carryover between hours is small in this simulator, so measure it","kind":"content","session":4,"hash":"23b38f6e","md":"#### [day3#carryover] Carryover between hours is small in this simulator, so measure it\n\n*Lab 3.4, step 4*\n\n- Unfinished deliveries spill into the next hour, whichever rule it has.\n- Measured: switchback with carryover -1.51 minutes, without -1.49.\n- In a real city the spill can be larger: test two-hour blocks, or drop the first hour after each switch.\n\n> **An honest finding.** The design choice here is the weighting, not the block length. Your marketplace may differ: simulate yours.","notes":"The simulator's spill applies to both arms almost equally, which is why the bias is near zero. Do not generalise this number; generalise the method: simulate the design with and without the nuisance and compare.","minutes":null,"lo":["LO5"]},{"id":"check-switchback","n":32,"title":"What is the unit of analysis in a switchback?","kind":"quiz","session":4,"hash":"6a35d91a","md":"#### [day3#check-switchback] What is the unit of analysis in a switchback?\n\n*Checkpoint*\n\n**Question:** Joud's switchback randomised 1,176 city-hour blocks; they contain about 83,000 orders. Ruba computes the standard error from the 83,000 orders as independent rows. What is wrong?\n\n- A. The block was randomised, so the standard error must be computed over blocks\n- B. The estimate is biased by interference\n- C. Nothing: more rows give a more precise estimate\n- D. The first hour after each switch must always be dropped","notes":"Answer: A. Connect to Day 2 session 3: the unit of analysis must match the unit of randomisation.","minutes":null,"lo":["LO5"]},{"id":"lab-3-4","n":33,"title":"A city-by-hour switchback and its power","kind":"lab","session":4,"hash":"2c26ddcc","md":"#### [day3#lab-3-4] A city-by-hour switchback and its power\n\nLab 3.4 · 25 min\n\nDesign a city-by-hour switchback for the dispatch change and simulate its power.\n\n[D3_4_switchback_power.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D3_4_switchback_power.ipynb)\n\n- [ ] One switchback run: blocks and arms (4 min)\n- [ ] The estimate with city and hour adjustment (6 min)\n- [ ] Power over 200 runs, with and without an effect (7 min)\n- [ ] Carryover: the bias of one-hour blocks (4 min)\n- [ ] Finish the memo: bias and power (4 min)\n- [ ] ✱ Stretch: Use two-hour blocks and drop the first hour after a switch","notes":"AI-tutor lab. The power grid runs 1,200 switchbacks and takes about a minute in full mode; quick mode uses 60 runs per cell. Lab 3.3's results are supplied in data/reference, so this lab starts on its own. The memo it saves, artifacts/T301_memo.md, is LO5's evidence.","minutes":null,"lo":[]},{"id":"wrap-up","n":34,"title":"Three things to keep","kind":"content","session":4,"hash":"3cf1f06d","md":"#### [day3#wrap-up] Three things to keep\n\n*Day 3*\n\n- **Plan the looks.** Daily peeking gave 28% false wins; a spending plan gave 5% and stopped a week early.\n- **Or pay for freedom.** Always-valid tests survive any looking, at a large cost in power over a fixed horizon.\n- **Randomise what is shared.** Shared couriers made a 1.8-minute gain look like 10.4.","notes":"Ask: which of your team's tests share a resource between treated and control users?","minutes":null,"lo":[]},{"id":"next","n":35,"title":"Next: deciding, and defending the decision","kind":"content","session":4,"hash":"a9d45b2a","md":"#### [day3#next] Next: deciding, and defending the decision\n\n*Day 4*\n\n- The Luqma chat-assistant test and its harm guardrail\n- Twenty segments and the false wins hiding in them\n- A one-page recommendation and the review board","notes":"Ask participants to think about which AI-feature change they would like for the capstone; Lab 4.4 makes the choice.","minutes":null,"lo":[]}],"activities":[{"id":"review-day2-q1","slide":"review-day2","type":"single","prompt":"Ruba must narrow the interval of revenue per triggered customer in T-101 and keep estimating exactly the effect on revenue. Which method does that?","options":[{"key":"A","text":"Capping each order at the 99th percentile"},{"key":"B","text":"Regression adjustment on revenue in the 28 pre-period days"},{"key":"C","text":"Dropping the customers with the largest orders"},{"key":"D","text":"Switching to revenue per order"}],"correct":[1],"explanation":"A pre-period covariate removes predictable noise; its term has mean zero in each arm, so the expected difference, and so the estimand, is unchanged.","misconceptions":["Forgets that a cap changes what is estimated: capped revenue, not revenue","","Removes customers, which changes the population and the estimand","Changes the metric to a ratio with its own estimand"],"lo":["LO1"]},{"id":"check-gst-q1","slide":"check-gst","type":"single","prompt":"A 28-day test with an O'Brien-Fleming plan shows z = 2.4 on day 5. The boundary on day 5 is infinite. Yazeed wants to launch. What do you tell him?","options":[{"key":"A","text":"The result is significant at 5%, so launch"},{"key":"B","text":"We should not have looked at day 5 at all"},{"key":"C","text":"Keep running: the evidence has not crossed the planned boundary"},{"key":"D","text":"Switch to a Pocock plan, whose day-5 boundary is lower"}],"correct":[2],"explanation":"The boundary is what keeps the false-win rate at 5% over all looks; crossing 1.96 early is common under no effect.","misconceptions":["Applies the fixed-test threshold to a sequential plan, which is exactly the peeking error","Thinks a sequential plan forbids looking, when it only forbids acting below the boundary","","Moves the plan after seeing the data"],"lo":["LO3"]},{"id":"check-avi-q1","slide":"check-avi","type":"single","prompt":"The Luqma team will check results on a public dashboard several times a day and may stop at any moment. The test has no fixed end date. Which design keeps the false-win rate at 5%?","options":[{"key":"A","text":"A fixed test at alpha = 0.01"},{"key":"B","text":"A group sequential test with daily looks"},{"key":"C","text":"A Bonferroni correction over the expected number of looks"},{"key":"D","text":"An always-valid test such as mSPRT"}],"correct":[3],"explanation":"Only an always-valid test keeps its error rate whatever the number and timing of looks and with no fixed end.","misconceptions":["Assumes a stricter fixed threshold solves repeated looks, without knowing how many there will be","Needs looks and a maximum fixed in advance, which this team cannot promise","Corrects for a known number of tests, but the number of looks is unknown",""],"lo":["LO3"]},{"id":"check-interference-q1","slide":"check-interference","type":"single","prompt":"Four tests are planned, each randomised by customer. Which result is most likely biased by interference between customers?","options":[{"key":"A","text":"A new wording on the checkout button"},{"key":"B","text":"A delivery-fee discount that raises orders at peak hours"},{"key":"C","text":"A dark mode for the app"},{"key":"D","text":"AI-ranked search for one customer's results"}],"correct":[1],"explanation":"More treated orders at peak load the same couriers that serve control customers, slowing them: the control arm is changed by the treatment.","misconceptions":["A change of wording on a screen affects only the customer who sees it","","A personal setting changes nothing for other customers","Search ranking shown to one customer does not use a resource others share, unless supply is scarce"],"lo":["LO5"]},{"id":"check-switchback-q1","slide":"check-switchback","type":"single","prompt":"Joud's switchback randomised 1,176 city-hour blocks; they contain about 83,000 orders. Ruba computes the standard error from the 83,000 orders as independent rows. What is wrong?","options":[{"key":"A","text":"The block was randomised, so the standard error must be computed over blocks"},{"key":"B","text":"The estimate is biased by interference"},{"key":"C","text":"Nothing: more rows give a more precise estimate"},{"key":"D","text":"The first hour after each switch must always be dropped"}],"correct":[0],"explanation":"Orders in one block share the rule and the same couriers; treating them as independent repeats Day 2's ratio-metric mistake at a larger scale.","misconceptions":["","Thinks the problem is the estimate, not its variance; the mean difference can be fine","Confuses a power shortfall with a variance error; more orders do not make them independent","Assumes carryover is the main error, when it is the unit of analysis"],"lo":["LO5"]}],"ai":{"context":{"course":"../context/course.md","courseJs":"../context/course.js","day":"day3.md","llms":"../llms.txt"},"tasks":[],"tools":[]},"bridge":{"allowedOrigins":[]},"features":{},"strings":{}}</script>
+<script src="../_engine/academy.js"></script>
+</body>
+</html>

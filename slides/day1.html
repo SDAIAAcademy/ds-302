@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-ax="deck" data-track="data-science">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 1 · Trustworthy experiments · Online Experiments and A/B Testing</title>
+<meta name="generator" content="SDAIA Academy engine 1.0.0">
+<link rel="icon" href="../_engine/icon.svg">
+<link rel="alternate" type="text/markdown" href="day1.md">
+<link rel="describedby" href="../llms.txt">
+<link rel="stylesheet" href="../_engine/academy.css">
+</head>
+<body>
+<div class="deck" data-course="Online Experiments and A/B Testing" data-track="data-science" data-day="Day 1">
+<section class="slide title" id="title" data-auto="title" data-label="Welcome" data-n="1">
+  <div class="kicker">SDAIA Academy · Online Experiments and A/B Testing</div>
+  <h1>Trustworthy experiments</h1>
+  <p class="lead mt">Day 1: Before any interval: who was assigned, who was exposed, and whether the split can be trusted</p>
+  <div class="meta"><span class="track">Data Science Track</span><span>4 teaching days + capstone day</span><span>4 sessions · 4 labs</span><span>DS-302</span></div>
+  <aside class="notes"><p>Welcome the room and introduce yourself. Calibrating question: "Who has seen a test result that was later reversed?" Ask two people what went wrong; most answers will be about trust, not statistics, which is today's subject. The rhythm: four sessions, each about twenty minutes of ideas, a checkpoint, then a 25-minute lab. Press B for a break when the room needs one.</p></aside>
+</section>
+
+<section class="slide" id="agenda" data-auto="agenda" data-label="Agenda" data-n="2">
+  <div class="kicker">Today</div>
+  <h2>Trustworthy experiments</h2>
+  <div class="agenda"><div class="item"><div><b>Session 1 · Assignment, exposure and triggering</b><small>Who was randomised, who saw the change, and why the triggered effect is the one to estimate</small></div></div><div class="item"><div><b>Session 2 · Sample ratio mismatch and A/A tests</b><small>A split that is not what was planned voids the result; A/A tests show the false-win rate the analysis really has</small></div></div><div class="item"><div><b>Session 3 · Metrics for AI features</b><small>A primary metric that measures the goal, and guardrails for what an AI feature adds: latency, cost and harm</small></div></div><div class="item"><div><b>Session 4 · Power for heavy-tailed metrics</b><small>Sample size from the formula and from simulation on the real distribution, for the population that is triggered</small></div></div></div>
+  <aside class="notes"><p>Today is about whether a test can be trusted at all, before anyone computes a clever interval: who was assigned, who was exposed, whether the split is what was planned, which metrics decide, and how many customers the test needs.</p></aside>
+</section>
+
+<section class="slide" id="setup-check" data-label="Setup" data-n="3">
+  <div class="kicker">Before the first lab</div>
+  <h2>One notebook proves your machine is ready</h2>
+  <div class="cols cols-2">
+    <div class="stack">
+      <pre class="code s" data-file="labs/"><code class="language-bash">uv <span class="hljs-built_in">sync</span>
+uv run jupyter lab
+<span class="hljs-comment"># then run 00_setup_check.ipynb</span></code></pre>
+      <p class="small">In Colab, open the notebook from the course page: its first cell clones the repository and installs the libraries.</p>
+    </div>
+    <ul class="bullets small">
+      <li><b>Nothing to download</b>: no model, no dataset. The Sufrah data is generated on your machine with fixed seeds.</li>
+      <li><b>No key</b>: no lab calls a hosted model; the chat-assistant test of Day 4 is analysed from its logs.</li>
+      <li><b>Quick mode</b>: <code>SUFRAH_QUICK=1</code> uses 30,000 customers in place of 200,000. The slides quote full mode.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>Ask everyone to run the setup check now, while you introduce the case. It prints the library versions and generates the stream (about 15 seconds on a laptop in full mode). On Windows, if an import fails with a long path error, set UV_PROJECT_ENVIRONMENT to a short folder before uv sync; labs/README.md says how. Ask who did the pre-work quiz on power and the two-sample test: Session 4 assumes it.</p></aside>
+</section>
+
+<section class="slide" id="meet-sufrah" data-label="The case" data-n="4">
+  <div class="kicker">The case study</div>
+  <h2>Sufrah tests everything, and now it tests AI features</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>The marketplace</h4><p class="small mb0">A fictional food-delivery app in six Saudi cities: 200,000 active customers, restaurants, and couriers shared by everyone.</p></div>
+    <div class="card c-cyan"><h4>Two AI features</h4><p class="small mb0">AI-ranked search (test T-101) and Luqma, an in-app chat assistant (T-401). Each adds latency, cost and new ways to harm.</p></div>
+    <div class="card c-coral"><h4>The people</h4><p class="small mb0">Rawan Al-Mubarak chairs the review board. Yazeed Al-Hamdan owns search. Joud Al-Fahad runs couriers. Waleed Al-Sharif protects data. You are Ruba Kamal, the analyst.</p></div>
+  </div>
+  <p class="small mt">All data is synthetic, generated with fixed seeds: about two million orders over 28 pre-period and 28 test days.</p>
+  <aside class="notes"><p>The case runs through every lab and the capstone. Sufrah is fictional; no real company, person or customer data is involved. Point out that the generator also knows things no real test knows, such as each customer's outcome under both arms: Day 2 uses that to measure bias exactly.</p></aside>
+</section>
+
+<!-- ======================= SESSION 1 ======================= -->
+<section class="slide section" id="s1" data-auto="section" data-session="1" data-n="5">
+  <div class="kicker">Session 1</div>
+  <h1>Assignment, exposure and triggering</h1>
+  <ul class="bullets outcomes"><li>Separate assignment, exposure and the trigger condition in an event log</li><li>Compute a triggered effect and the diluted overall effect from it</li><li>Explain why counterfactual logging keeps the control group comparable</li></ul>
+  <div class="sess-no">01</div>
+</section>
+
+<section class="slide" id="three-events" data-lo="LO4" data-label="Three events" data-n="6" data-session="1">
+  <div class="kicker">Assignment is not exposure</div>
+  <h2>Every test log records three different events</h2>
+  <div class="flow">
+    <div class="step c-navy"><b>1 · Eligible</b>Active in the last 90 days: all 200,000 customers</div>
+    <div class="arrow frag" data-frag="a">→</div><div class="step c-teal frag" data-frag="a"><b>2 · Assigned</b>Day 0: a variant for each customer, 50/50</div>
+    <div class="arrow frag" data-frag="b">→</div><div class="step c-coral frag" data-frag="b"><b>3 · Exposed</b>At the first search: the only moment the ranking can matter</div>
+  </div>
+  <div class="callout tip mt frag"><b>Triggering.</b> Analyse the customers whose exposure condition held, in both arms. The others can only add noise.</div>
+  <aside class="notes"><p>Press once per step. The trigger condition here is "searched at least once in the test period". Ask: who in this room has analysed a test over everyone assigned when only a fraction could see the change? It is the most common way a real effect disappears into noise.</p></aside>
+</section>
+
+<section class="slide" id="counterfactual-logging" data-lo="LO4" data-label="Counterfactual logging" data-n="7" data-session="1">
+  <div class="kicker">The control group must be triggered too</div>
+  <h2>Log the trigger in control, where nothing visible happens</h2>
+  <div class="cols cols-2">
+    <div class="card c-coral flat"><h4>Wrong</h4><p class="small mb0">Triggered treatment customers compared with all control customers. The groups differ in who they are: searchers order more.</p></div>
+    <div class="card c-teal flat"><h4>Right</h4><p class="small mb0">Control logs "would have seen the AI ranking" at the same moment. Both arms are cut by the same rule, so randomisation still holds inside the cut.</p></div>
+  </div>
+  <div class="callout warn mt"><b>The trigger must not depend on the treatment.</b> A search happens before the ranking is shown, so the rule is safe. "Clicked a result" would not be.</div>
+  <aside class="notes"><p>In Lab 1.1 the trigger rates are 42.45% in control and 42.63% in treatment (chi-square p = 0.40): balanced, as they must be. If a feature changes who triggers (for example a trigger defined by an event the new ranking causes), the triggered comparison is biased and you must fall back to the assigned population.</p></aside>
+</section>
+
+<section class="slide" id="exposure-sql" data-lo="LO4" data-label="In SQL" data-n="8" data-session="1">
+  <div class="kicker">Lab 1.1, step 2</div>
+  <h2>Exposure is one left join and a minimum</h2>
+  <pre class="code s" data-file="exposure.sql"><code class="language-sql"><span class="hljs-keyword">select</span> a.customer_id, a.variant, f.exposed_day
+<span class="hljs-keyword">from</span> assignments a
+<span class="hljs-keyword">left</span> <span class="hljs-keyword">join</span> (<span class="hljs-keyword">select</span> customer_id, <span class="hljs-built_in">min</span>(<span class="hljs-keyword">day</span>) <span class="hljs-keyword">as</span> exposed_day
+           <span class="hljs-keyword">from</span> searches <span class="hljs-keyword">where</span> <span class="hljs-keyword">day</span> <span class="hljs-operator">&gt;=</span> <span class="hljs-number">0</span>
+           <span class="hljs-keyword">group</span> <span class="hljs-keyword">by</span> customer_id) f
+  <span class="hljs-keyword">on</span> f.customer_id <span class="hljs-operator">=</span> a.customer_id</code></pre>
+  <ul class="bullets small mt-s">
+    <li><b>Left join</b>: a customer who never searched stays, with a NULL exposure day.</li>
+    <li>The same pattern counts orders per customer: <code>coalesce(o.orders, 0)</code> keeps the customers who did not order.</li>
+  </ul>
+  <aside class="notes"><p>The commonest bug in this lab is an inner join to orders, which silently drops every customer with zero orders and inflates both means. Ask the room what that does to the difference: it changes the population, so it is no longer a randomised comparison. DuckDB runs the queries directly on the pandas tables; PostgreSQL would run the same SQL.</p></aside>
+</section>
+
+<section class="slide" id="diluted-vs-triggered" data-lo="LO4" data-label="Two effects" data-n="9" data-session="1">
+  <div class="kicker">Measured in Lab 1.1, full mode</div>
+  <h2>The triggered lift is nearly twice the diluted one</h2>
+  <table class="t">
+    <tr><th>Population</th><th class="num">Customers</th><th class="num">Orders per customer, difference</th><th class="num">95% interval</th><th class="num">Relative</th></tr>
+    <tr><td>All assigned (diluted)</td><td class="num">200,000</td><td class="num">+0.104</td><td class="num">+0.049 to +0.159</td><td class="num">+2.0%</td></tr>
+    <tr class="hl"><td>Triggered</td><td class="num">85,080</td><td class="num">+0.253</td><td class="num">+0.163 to +0.343</td><td class="num">+3.9%</td></tr>
+  </table>
+  <div class="callout tip mt"><b>Dilution.</b> Overall difference ≈ triggered difference × trigger rate: 0.253 × 0.425 = 0.108, against 0.104 measured.</div>
+  <aside class="notes"><p>Numbers from the solution run of Lab 1.1 in full mode; quick mode shows the same pattern with wider intervals. The triggered estimate is 5.5 standard errors from zero, the diluted one 3.7. Report the triggered effect for the decision about search, and the diluted one when someone asks what it does for the whole business.</p></aside>
+</section>
+
+<section class="slide" id="dilution-formula" data-lo="LO4" data-label="Dilution" data-n="10" data-session="1">
+  <div class="kicker">Why dilution costs power</div>
+  <h2>Untriggered customers add variance and no signal</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li>The effect shrinks by the trigger rate, here 0.425.</li>
+      <li>The noise does not shrink: 57% of the customers still vary.</li>
+      <li>Dividing the effect by 0.425 multiplies the customers needed by 1 / 0.425² ≈ 5.5; the assigned population is only 1 / 0.425 ≈ 2.4 times the triggered one.</li>
+    </ul>
+    <div class="stat"><div class="big">5.5 vs 3.7</div><div class="lbl">standard errors from zero: triggered against diluted (Lab 1.1)</div></div>
+  </div>
+  <aside class="notes"><p>The rough rule assumes similar variance in both groups; here the searchers order more and vary more, which is why the gain in z is smaller than the rule suggests. The exact comparison is the two z values on the slide.</p></aside>
+</section>
+
+<section class="slide" id="check-trigger" data-lo="LO4" data-n="11" data-session="1">
+  <div class="kicker">Checkpoint</div>
+  <h2>Which comparison estimates the effect of AI ranking?</h2>
+  <div class="quiz" data-type="single" data-lo="LO4" data-id="check-trigger-q1">
+    <p class="lead">T-101 assigned 200,000 customers; 85,080 searched. You want the effect of the new ranking on the people it can reach. Which comparison do you report?</p>
+    <div class="opts">
+      <div class="opt" data-why="Treats the trigger as a property of treatment only: the two groups then differ in who they are, not only in the ranking" data-k="A">Treatment customers who searched against all control customers</div>
+      <div class="opt" data-ok data-k="B">Customers who searched in treatment against customers who searched in control</div>
+      <div class="opt" data-why="Assumes more data is always better: the untriggered customers add noise and no effect" data-k="C">All treatment customers against all control customers, because it uses more data</div>
+      <div class="opt" data-why="Confuses exposure with assignment: the timing of the first search is not randomised, so before and after is not a controlled comparison" data-k="D">Each searcher's orders before and after the first search</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> The same trigger rule in both arms keeps randomisation intact inside the triggered group, and leaves out customers the ranking could not affect.</div>
+  </div>
+  <aside class="notes"><p>Answer: B. If many pick C, return to the dilution slide: C is unbiased for a different question and has less power. If many pick A, return to counterfactual logging.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-1-1" data-auto="lab" data-lab="1.1" data-label="Lab 1.1" data-n="12" data-session="1">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 1.1 · 25 min</div><h2>Triggered and diluted effects in SQL</h2><p class="lead small">Trace assignment and exposure in SQL and compare the triggered effect with the diluted overall effect, on the event stream of the AI-ranked search test.</p><a class="nb" href="../labs/D1_1_triggered_exposure.ipynb">D1_1_triggered_exposure.ipynb</a></div><ul class="checklist"><li>Read the four tables and their keys <span class="min">4 min</span></li><li>Join assignments to the first search: who was exposed, when <span class="min">6 min</span></li><li>Orders per customer, all assigned against triggered, in SQL <span class="min">6 min</span></li><li>Two effects with intervals, and the dilution formula <span class="min">6 min</span></li><li>Check: exposure is balanced between the arms <span class="min">3 min</span></li><li class="stretch">✱ Stretch: Count only orders after exposure and say what changes</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab: an assistant may explain SQL, not write the queries. Walk the room for the inner-join bug (counts of customers per arm fall below 100,000 in step 3) and for a query that counts pre-period orders (no filter on day). The stretch: orders after exposure only lower the control mean because the days before exposure are left out in both arms; the difference barely moves.</p></aside>
+</section>
+
+<!-- ======================= SESSION 2 ======================= -->
+<section class="slide section" id="s2" data-auto="section" data-session="2" data-n="13">
+  <div class="kicker">Session 2</div>
+  <h1>Sample ratio mismatch and A/A tests</h1>
+  <ul class="bullets outcomes"><li>Test a split against its plan with a chi-square test</li><li>Locate the cause of a mismatch by segment</li><li>Measure a false-positive rate with A/A reshuffles of real data</li></ul>
+  <div class="sess-no">02</div>
+</section>
+
+<section class="slide" id="srm-what" data-lo="LO6" data-label="Sample ratio" data-n="14" data-session="2">
+  <div class="kicker">The first check on every test</div>
+  <h2>A split that differs from its plan voids the result</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li>Planned 50/50; observed 50,221 control and 49,028 treatment in T-203.</li>
+      <li>A chi-square test against the plan: p = 0.00015.</li>
+      <li>The users who went missing were not missing at random, so the remaining arms are no longer comparable.</li>
+    </ul>
+    <div class="stat"><div class="big">49.4%</div><div class="lbl">treatment share in T-203: small to the eye, decisive to the test</div></div>
+  </div>
+  <div class="callout warn mt"><b>Never read the metrics of a test that fails this check.</b> Find the cause first.</div>
+  <aside class="notes"><p>Numbers from Lab 1.2 (data/srm_tests.csv). Platforms commonly flag a split at p below 0.001; the threshold is strict because the check runs on every test, often every day. The lift of a test with a mismatch may be produced entirely by who was lost.</p></aside>
+</section>
+
+<section class="slide" id="srm-causes" data-lo="LO6" data-label="Causes" data-n="15" data-session="2">
+  <div class="kicker">Where mismatches come from</div>
+  <h2>Most mismatches come from what happens after assignment</h2>
+  <div class="cols cols-3">
+    <div class="card c-coral"><h4>Lost</h4><p class="small mb0">The treatment crashes or loads slower on one build, so its users never log an exposure.</p></div>
+    <div class="card c-amber"><h4>Filtered</h4><p class="small mb0">A bot filter or a data-quality rule removes more users from one arm.</p></div>
+    <div class="card c-purple"><h4>Redirected</h4><p class="small mb0">A treatment that redirects or reloads assigns some users twice or not at all.</p></div>
+  </div>
+  <p class="small mt">Diagnose by splitting the counts by every dimension that could lose users unevenly: platform, build, day, browser.</p>
+  <aside class="notes"><p>In Lab 1.2 the split by app build shows the cause at once: build 7.4 has a treatment share of 46.4% (p far below 0.001) while every other build is near 50%. The split by day shows a treatment share below 50% on 11 of 14 days, which points to a permanent cause, not an outage.</p></aside>
+</section>
+
+<section class="slide" id="srm-by-build" data-lo="LO6" data-label="By build" data-n="16" data-session="2">
+  <div class="kicker">Lab 1.2, step 3</div>
+  <h2>One Android build loses one treatment user in seven</h2>
+  <div class="bars">
+    <div class="row"><span>iOS 17.2</span><div class="bar c-teal" style="--w:50.3%"></div><span class="val">50.3%</span></div>
+    <div class="row"><span>iOS 17.3</span><div class="bar c-teal" style="--w:50.1%"></div><span class="val">50.1%</span></div>
+    <div class="row"><span>Android 7.3</span><div class="bar c-teal" style="--w:50.6%"></div><span class="val">50.6%</span></div>
+    <div class="row"><span>Android 7.4</span><div class="bar c-coral" style="--w:46.4%"></div><span class="val">46.4%</span></div>
+    <div class="row"><span>Web</span><div class="bar c-teal" style="--w:49.3%"></div><span class="val">49.3%</span></div>
+  </div>
+  <p class="small mt">Treatment share of T-203 users by app build, 14 days.</p>
+  <aside class="notes"><p>The bars are the treatment shares from the solution run. The planted cause: the new checkout page fails on build 7.4 before the exposure is logged, so 14% of that build's treatment users disappear. The fix is engineering, then a rerun; no reweighting rescues the original test.</p></aside>
+</section>
+
+<section class="slide" id="aa-tests" data-lo="LO6" data-label="A/A tests" data-n="17" data-session="2">
+  <div class="kicker">A/A tests</div>
+  <h2>Reshuffle real data to measure the false-win rate you really have</h2>
+  <div class="cols cols-2">
+    <ol class="bullets small">
+      <li>Take 28 days of pre-period revenue per customer.</li>
+      <li>Split the customers at random into two halves.</li>
+      <li>Run the analysis you plan to use. Record p.</li>
+      <li>Repeat 500 times. Count p below 0.05.</li>
+    </ol>
+    <div class="stack">
+      <div class="stat"><div class="big">5.8%</div><div class="lbl">false wins over 500 reshuffles (expected 5% ± 1.9)</div></div>
+      <div class="card c-teal flat"><p class="small mb0">The customer-level Welch test is calibrated on Sufrah's heavy-tailed revenue.</p></div>
+    </div>
+  </div>
+  <aside class="notes"><p>From Lab 1.2 step 4, full mode. An A/A rate well above 5% means the analysis is wrong for the data, most often because the unit of analysis is smaller than the unit of randomisation. The stretch shows it: split by customer, test at the order level, and the rate rises. Day 2 session 3 repairs it with the delta method.</p></aside>
+</section>
+
+<section class="slide" id="novelty" data-lo="LO6" data-label="Novelty" data-n="18" data-session="2">
+  <div class="kicker">A trust problem in time</div>
+  <h2>A new feature can win because it is new</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li><b>Novelty</b>: customers try the change because it is different; the lift fades.</li>
+      <li><b>Primacy</b>: customers used to the old version resist; the lift grows.</li>
+      <li>Check the effect by week since first exposure, not only in total.</li>
+    </ul>
+    <div class="card c-purple"><h4>Day 4</h4><p class="small mb0">Luqma, the chat assistant, lifts orders by 5.8% in week one and by nothing measurable in week four. Lab 4.1 measures it.</p></div>
+  </div>
+  <aside class="notes"><p>The Luqma numbers are previewed here and computed in Lab 4.1. Run long enough to see the settled effect; two full weeks is a common minimum because weekday patterns also matter. A test stopped early on a novelty lift ships a feature whose value disappears.</p></aside>
+</section>
+
+<section class="slide" id="check-srm" data-lo="LO6" data-n="19" data-session="2">
+  <div class="kicker">Checkpoint</div>
+  <h2>The result looks good, the split does not</h2>
+  <div class="quiz" data-type="single" data-lo="LO6" data-id="check-srm-q1">
+    <p class="lead">A 50/50 test shows +3% orders with p = 0.002. Its sample ratio check gives p = 0.0004: the treatment arm has 1.2% fewer users than planned. What do you do?</p>
+    <div class="opts">
+      <div class="opt" data-why="Thinks a mismatch only costs a little precision; the missing users can create the whole lift" data-k="A">Report the lift: the arms are large and the gap is only 1.2%</div>
+      <div class="opt" data-why="Assumes reweighting can restore randomisation; it cannot recover who was lost or why" data-k="B">Reweight the treatment arm up to 50% and report the adjusted lift</div>
+      <div class="opt" data-ok data-k="C">Report no result, find where users are lost, fix it and rerun</div>
+      <div class="opt" data-why="Treats the sample ratio check as one more metric to correct for multiplicity, not as a test of the experiment itself" data-k="D">Correct both p-values for multiple testing and report what survives</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A mismatch means assignment did not work as planned, so the arms are no longer comparable. No analysis of the outcome repairs that.</div>
+  </div>
+  <aside class="notes"><p>Answer: C. Follow-up question: where would you look first? By platform and build, then by day, then by entry point.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-1-2" data-auto="lab" data-lab="1.2" data-label="Lab 1.2" data-n="20" data-session="2">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 1.2 · 25 min</div><h2>Sample ratio and A/A checks</h2><p class="lead small">Run A/A and sample ratio checks on three tests and name the faulty one, then find the segment that causes the mismatch.</p><a class="nb" href="../labs/D1_2_srm_aa_checks.ipynb">D1_2_srm_aa_checks.ipynb</a></div><ul class="checklist"><li>Users per arm for three tests <span class="min">3 min</span></li><li>A chi-square sample ratio test for each <span class="min">5 min</span></li><li>Find the platform and build that lose users <span class="min">6 min</span></li><li>A/A: 500 reshuffles of the pre-period, the false-win rate <span class="min">7 min</span></li><li>Name the faulty test and its cause in one line <span class="min">4 min</span></li><li class="stretch">✱ Stretch: Run the A/A at the order level and explain the higher rate</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. The usual mistake in step 2 is passing the shares rather than the counts to the chi-square test: p is then never small. In step 4 a participant who calls the t-test with equal_var=True still gets about 5%; the point is the reshuffle, not the variant of the test. Quick mode uses 200 reshuffles, so its band is wider.</p></aside>
+</section>
+
+<!-- ======================= SESSION 3 ======================= -->
+<section class="slide section" id="s3" data-auto="section" data-session="3" data-n="21">
+  <div class="kicker">Session 3</div>
+  <h1>Metrics for AI features</h1>
+  <ul class="bullets outcomes"><li>Choose a primary metric that the change can move and that matters to the decision</li><li>Set latency, cost and harm guardrails with thresholds from baseline data</li><li>Decide which event data a test may use under purpose limitation and data classification</li></ul>
+  <div class="sess-no">03</div>
+</section>
+
+<section class="slide" id="primary-vs-guardrail" data-lo="LO4" data-label="Metric roles" data-n="22" data-session="3">
+  <div class="kicker">Metric roles</div>
+  <h2>One primary metric decides; guardrails can only veto</h2>
+  <table class="t small">
+    <tr><th>Role</th><th>Question it answers</th><th>T-101 example</th></tr>
+    <tr><td><b>Primary</b></td><td>Did the change do what it is for?</td><td>Orders per triggered customer, 28 days</td></tr>
+    <tr><td><b>Guardrail</b></td><td>Did it break something we will not trade?</td><td>Search latency, model cost, complaints</td></tr>
+    <tr><td><b>Diagnostic</b></td><td>Why did it move?</td><td>Clicks on the first result, searches per session</td></tr>
+  </table>
+  <div class="callout warn mt"><b>A guardrail is not a second primary.</b> A guardrail that "improved" does not rescue a primary that did not move.</div>
+  <aside class="notes"><p>Ask the room for the primary metric of T-101 before showing the table. Revenue per customer is tempting; Lab 1.4 shows it needs about twice the traffic of orders per customer for the same 2% lift. Diagnostics explain, they never decide.</p></aside>
+</section>
+
+<section class="slide" id="ai-adds-three" data-lo="LO4" data-label="What AI adds" data-n="23" data-session="3">
+  <div class="kicker">What an AI feature adds</div>
+  <h2>A model call adds latency, cost and new harms</h2>
+  <div class="cols cols-3">
+    <div class="card c-cyan"><h4>Latency</h4><p class="small mb0">Every search waits for the model. Measure the tail: p95, not the mean.</p></div>
+    <div class="card c-amber"><h4>Cost</h4><p class="small mb0">A price per call, paid on every search, forever. Measure per 1,000 searches.</p></div>
+    <div class="card c-coral"><h4>Harm</h4><p class="small mb0">Wrong or unavailable items ranked first, unsafe answers, unfair exposure. Measure complaints and flags.</p></div>
+  </div>
+  <p class="small mt">The SDAIA Generative AI Guidelines ask that the risks of a generative feature be assessed and monitored; a harm guardrail is how a test does it.</p>
+  <aside class="notes"><p>The keyword ranking costs almost nothing per search; the AI ranking costs about SAR 5.8 per 1,000 searches in the ramp. Over a year of searches that is a number finance will ask about. Sources: SDAIA Generative AI Guidelines for Government and for the Public (course sources).</p></aside>
+</section>
+
+<section class="slide" id="ramp-baselines" data-lo="LO4" data-label="Ramp" data-n="24" data-session="3">
+  <div class="kicker">Lab 1.3, step 1: the 7-day ramp</div>
+  <h2>The ramp shows latency and cost at once, not the effect</h2>
+  <table class="t">
+    <tr><th></th><th class="num">p50 latency</th><th class="num">p95 latency</th><th class="num">Cost per 1,000 searches</th></tr>
+    <tr><td>Keyword ranking</td><td class="num">379 ms</td><td class="num">676 ms</td><td class="num">SAR 0.2</td></tr>
+    <tr class="hl"><td>AI ranking</td><td class="num">543 ms</td><td class="num">1,095 ms</td><td class="num">SAR 5.8</td></tr>
+  </table>
+  <p class="small mt">5% of searches on the AI ranking for seven days: about 6,000 searches. Too few to see a 2% change in orders; plenty to see a 400 ms tail.</p>
+  <aside class="notes"><p>Numbers from the solution run of Lab 1.3, full mode. The median rises by 164 ms but the p95 by about 420 ms: the AI ranking's tail is long. Thresholds set from these baselines are defensible; thresholds set after the test are not.</p></aside>
+</section>
+
+<section class="slide" id="guardrail-spec" data-lo="LO4" data-label="Guardrails" data-n="25" data-session="3">
+  <div class="kicker">Writing a guardrail</div>
+  <h2>A guardrail is a metric, a direction and a number, written before the test</h2>
+  <pre class="code s" data-file="T101_metric_spec.json"><code class="language-json"><span class="hljs-punctuation">{</span><span class="hljs-attr">&quot;metric&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;search latency p95 (ms), treatment minus control&quot;</span><span class="hljs-punctuation">,</span>
+ <span class="hljs-attr">&quot;kind&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;latency&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;at most&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;threshold&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">300</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+<span class="hljs-punctuation">{</span><span class="hljs-attr">&quot;metric&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;inference cost per 1,000 searches (SAR)&quot;</span><span class="hljs-punctuation">,</span>
+ <span class="hljs-attr">&quot;kind&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;cost&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;at most&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;threshold&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">8.0</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+<span class="hljs-punctuation">{</span><span class="hljs-attr">&quot;metric&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;complaints per 1,000 orders, upper 95% bound of the difference&quot;</span><span class="hljs-punctuation">,</span>
+ <span class="hljs-attr">&quot;kind&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;harm&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;at most&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;threshold&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1.0</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;harm&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">}</span></code></pre>
+  <div class="callout tip mt-s"><b>Harm guardrails use the interval.</b> The upper bound must stay under the line: "no evidence of harm" is not enough.</div>
+  <aside class="notes"><p>The harm guardrail is a non-inferiority test: the change passes only if the interval rules out a rise of more than one complaint per 1,000 orders. Ask why the latency threshold is on the difference and the cost threshold on the treatment level: latency is relative to what customers have now, cost is a budget.</p></aside>
+</section>
+
+<section class="slide" id="purpose-limitation" data-lo="LO4" data-label="Which data" data-n="26" data-session="3">
+  <div class="kicker">Lab 1.3, step 4</div>
+  <h2>A test may read only the data its purpose needs</h2>
+  <div class="cols cols-2">
+    <ul class="bullets small">
+      <li>The <b>Personal Data Protection Law</b> lets a controller process personal data for the purposes it was collected for, and asks that it be limited to the minimum necessary.</li>
+      <li>The <b>NDMO Data Classification Policy</b> has four levels: Top Secret, Secret, Restricted, Public. The level sets how data is protected, not whether this use is allowed.</li>
+    </ul>
+    <table class="t small">
+      <tr><th>Field</th><th>Use in T-101?</th></tr>
+      <tr><td>complaint category</td><td>yes</td></tr>
+      <tr><td>complaint text</td><td>no: the category suffices</td></tr>
+      <tr><td>exact delivery coordinates</td><td>no: city suffices</td></tr>
+      <tr><td>allergy profile</td><td>no: health data</td></tr>
+    </table>
+  </div>
+  <aside class="notes"><p>The decision in the lab follows Sufrah's privacy notice, which lists product improvement as a purpose. Waleed Al-Sharif's answer allows seven fields of twelve. Sources: Personal Data Protection Law (articles on purpose and minimum necessary content) and the NDMO Data Classification Policy, read in the official SDAIA files; see the course sources. The classification policy is written for public entities; Sufrah uses its levels as a house scheme.</p></aside>
+</section>
+
+<section class="slide" id="check-metrics" data-lo="LO4" data-n="27" data-session="3">
+  <div class="kicker">Checkpoint</div>
+  <h2>The primary wins, a guardrail fails</h2>
+  <div class="quiz" data-type="single" data-lo="LO4" data-id="check-metrics-q1">
+    <p class="lead">The AI ranking lifts orders by 3.9% (interval well above zero). Its p95 latency is 420 ms worse; the pre-registered limit was 300 ms. What does the spec say?</p>
+    <div class="opts">
+      <div class="opt" data-ok data-k="A">Not a launch as is: the latency guardrail fails, so the decision rule applies</div>
+      <div class="opt" data-why="Treats guardrails as weights to trade against the primary, which is what writing them in advance prevents" data-k="B">Launch: a 3.9% lift is worth more than 120 ms</div>
+      <div class="opt" data-why="Moves the threshold after seeing the data, which turns the guardrail into decoration" data-k="C">Raise the latency limit to 450 ms and launch</div>
+      <div class="opt" data-why="Confuses a guardrail with a diagnostic: latency here is a limit, not an explanation" data-k="D">Report latency as a side note to the primary result</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> Guardrails were written before the test so that a good primary cannot buy them off. The rule decides what follows: for T-101, iterate on latency.</div>
+  </div>
+  <aside class="notes"><p>Answer: A. This is exactly the situation of T-101 in Lab 4.3; the decision rule there says "iterate" because a non-harm guardrail failed.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-1-3" data-auto="lab" data-lab="1.3" data-label="Lab 1.3" data-n="28" data-session="3">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 1.3 · 25 min</div><h2>A metric spec for AI-ranked search</h2><p class="lead small">Define a primary metric and latency, cost and harm guardrails for the AI-ranked search test from its ramp data, and decide which fields the analysis may use.</p><a class="nb" href="../labs/D1_3_ai_search_metrics.ipynb">D1_3_ai_search_metrics.ipynb</a></div><ul class="checklist"><li>Baselines from the ramp: latency, cost, conversion, complaints <span class="min">6 min</span></li><li>The primary metric and its unit <span class="min">4 min</span></li><li>Three guardrails with thresholds and directions <span class="min">6 min</span></li><li>The data inventory: which fields the test may use <span class="min">6 min</span></li><li>Save the metric spec <span class="min">3 min</span></li><li class="stretch">✱ Stretch: Add a guardrail that protects small restaurants and say how you would measure it</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. Steps 2 and 3 have no single right answer; the checks test the structure (per customer, triggered, numeric thresholds, a harm guardrail). Step 4 has one answer: compare with the reference. Common error: allowing the search text "to measure relevance". Ask what metric it serves; the categories serve the metrics.</p></aside>
+</section>
+
+<!-- ======================= SESSION 4 ======================= -->
+<section class="slide section" id="s4" data-auto="section" data-session="4" data-n="29">
+  <div class="kicker">Session 4</div>
+  <h1>Power for heavy-tailed metrics</h1>
+  <ul class="bullets outcomes"><li>Compute a sample size with the two-sample formula</li><li>Estimate power by simulation from historical data</li><li>Explain when the formula and the simulation disagree for a heavy-tailed metric</li></ul>
+  <div class="sess-no">04</div>
+</section>
+
+<section class="slide" id="power-recap" data-lo="LO4" data-label="Recap" data-n="30" data-session="4">
+  <div class="kicker">From the pre-work</div>
+  <h2>Sample size grows with the variance and with one over the effect squared</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="formula"><code class="language-python">n_per_arm = <span class="hljs-number">2</span> * (z_0<span class="hljs-number">.975</span> + z_0<span class="hljs-number">.80</span>)**<span class="hljs-number">2</span> * sd**<span class="hljs-number">2</span> / delta**<span class="hljs-number">2</span>
+          = <span class="hljs-number">2</span> * <span class="hljs-number">7.85</span> * sd**<span class="hljs-number">2</span> / delta**<span class="hljs-number">2</span></code></pre>
+    <ul class="bullets small">
+      <li>Halve the effect: four times the customers.</li>
+      <li>Halve the standard deviation: a quarter of them.</li>
+      <li>Day 2 is about the second line.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>This recaps DS-205 and the pre-work. If the entry quiz showed gaps, spend two minutes on the meaning of power: the chance that a test with the planned size detects an effect of the planned size.</p></aside>
+</section>
+
+<section class="slide" id="heavy-tail" data-lo="LO4" data-label="The tail" data-n="31" data-session="4">
+  <div class="kicker">Lab 1.4, step 1</div>
+  <h2>Revenue per customer has a long tail of group orders</h2>
+  <div class="cols cols-3">
+    <div class="stat"><div class="big">511</div><div class="lbl">mean SAR, 28 days, customers who search</div></div>
+    <div class="stat"><div class="big">295</div><div class="lbl">median SAR</div></div>
+    <div class="stat"><div class="big">9.4%</div><div class="lbl">of revenue from the top 1% of customers</div></div>
+  </div>
+  <p class="small mt">Standard deviation 747 SAR, largest customer 31,104 SAR: catering and group orders, about one order in a hundred.</p>
+  <aside class="notes"><p>Numbers from the pre-period of the T-101 stream, full mode. Ask what a mean twice the median tells you before any histogram. The tail is real business, not an error: Day 2 decides whether to cap it.</p></aside>
+</section>
+
+<section class="slide" id="power-by-simulation" data-lo="LO4" data-label="Simulation" data-n="32" data-session="4">
+  <div class="kicker">Power by simulation</div>
+  <h2>Simulate the test you will run on the data you have</h2>
+  <pre class="code s" data-file="Lab 1.4 · sim_power"><code class="language-python"><span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(sims):
+    c = rng.choice(values, n)                  <span class="hljs-comment"># control arm from history</span>
+    t = rng.choice(values, n) * (<span class="hljs-number">1</span> + lift)     <span class="hljs-comment"># treatment arm, lifted</span>
+    hits += ttest_ind(t, c, equal_var=<span class="hljs-literal">False</span>).pvalue &lt; <span class="hljs-number">0.05</span>
+power = hits / sims</code></pre>
+  <ul class="bullets small mt-s">
+    <li>Keeps the real distribution, tail included.</li>
+    <li>Works for any analysis: capping, triggering, a sequential plan, a ratio metric.</li>
+  </ul>
+  <aside class="notes"><p>The multiplicative lift assumes every customer changes by the same proportion. It is a modelling choice; an additive lift or a lift concentrated in light users gives other answers, which is a good stretch question.</p></aside>
+</section>
+
+<section class="slide" id="formula-vs-sim" data-lo="LO4" data-label="Agreement" data-n="33" data-session="4">
+  <div class="kicker">Lab 1.4, full mode, 400 simulations</div>
+  <h2>At 84,000 per arm the formula and the simulation agree</h2>
+  <table class="t">
+    <tr><th class="num">Customers per arm</th><th class="num">Simulated power</th><th class="num">Formula</th></tr>
+    <tr><td class="num">20,924</td><td class="num">0.31</td><td class="num">0.29</td></tr>
+    <tr><td class="num">41,849</td><td class="num">0.57</td><td class="num">0.51</td></tr>
+    <tr class="hl"><td class="num">83,699</td><td class="num">0.77</td><td class="num">0.80</td></tr>
+    <tr><td class="num">104,623</td><td class="num">0.85</td><td class="num">0.88</td></tr>
+  </table>
+  <div class="callout warn mt-s"><b>What the formula hides.</b> Its standard deviation came from one sample. A sample that missed a few giant orders gives a sigma, and a size, that are too small.</div>
+  <aside class="notes"><p>With 400 simulations the simulated power has a standard error of about 0.02, so 0.77 against 0.80 is agreement. At these sizes the mean of tens of thousands of heavy-tailed values is close to normal. Ask the room to try the formula with the standard deviation of a 2,000-customer subsample: the answer jumps around.</p></aside>
+</section>
+
+<section class="slide" id="traffic" data-lo="LO4" data-label="Traffic" data-n="34" data-session="4">
+  <div class="kicker">Lab 1.4, step 5</div>
+  <h2>Revenue needs twice the traffic of orders for the same 2% lift</h2>
+  <div class="bars">
+    <div class="row"><span>Revenue per customer</span><div class="bar c-coral" style="--w:100%"></div><span class="val">83,699 per arm, about 55 days</span></div>
+    <div class="row"><span>Orders per customer</span><div class="bar c-teal" style="--w:50%"></div><span class="val">41,480 per arm, about 27 days</span></div>
+  </div>
+  <div class="callout tip mt"><b>So T-101 runs 28 days on orders per triggered customer.</b> Revenue becomes a guardrail with a one-sided limit.</div>
+  <aside class="notes"><p>Days are computed from the average arrival of triggered customers (85,080 in 28 days), which is optimistic: most of the people who will ever search do so in the first days. Plan whole weeks. Day 2 shows how pre-period data would cut the revenue requirement sharply.</p></aside>
+</section>
+
+<section class="slide" id="check-power" data-lo="LO4" data-n="35" data-session="4">
+  <div class="kicker">Checkpoint</div>
+  <h2>How many customers for a smaller effect?</h2>
+  <div class="quiz" data-type="single" data-lo="LO4" data-id="check-power-q1">
+    <p class="lead">A test needs 41,000 customers per arm to detect a 2% lift in orders with 80% power. The product manager now wants to detect 1%. Roughly how many per arm?</p>
+    <div class="opts">
+      <div class="opt" data-why="Assumes sample size grows in proportion to precision, when it grows with its square" data-k="A">82,000</div>
+      <div class="opt" data-why="Applies the square root the wrong way round" data-k="B">58,000</div>
+      <div class="opt" data-why="Confuses halving the effect with halving the power" data-k="C">20,500</div>
+      <div class="opt" data-ok data-k="D">164,000</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> The sample size grows with one over the effect squared: half the effect needs four times the customers.</div>
+  </div>
+  <aside class="notes"><p>Answer: D. Then ask whether Sufrah has 328,000 triggered customers in four weeks. It does not; the answer is a longer test, a less noisy metric, or Day 2's methods.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-1-4" data-auto="lab" data-lab="1.4" data-label="Lab 1.4" data-n="36" data-session="4">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 1.4 · 25 min</div><h2>Power by simulation for the search test</h2><p class="lead small">Size the search test by simulation on revenue per user and compare with the textbook formula, for triggered customers.</p><a class="nb" href="../labs/D1_4_power_heavy_tails.ipynb">D1_4_power_heavy_tails.ipynb</a></div><ul class="checklist"><li>Revenue per triggered customer: mean, spread, tail <span class="min">4 min</span></li><li>The formula: customers per arm for a 2% lift <span class="min">5 min</span></li><li>Power by simulation at that size <span class="min">7 min</span></li><li>A power curve and the size for 80% power <span class="min">5 min</span></li><li>Weeks of traffic needed, and the same for orders per customer <span class="min">4 min</span></li><li class="stretch">✱ Stretch: Repeat with a 1% lift and say whether the test is worth running</li></ul></div>
+  <aside class="notes"><p>AI-off for the first attempt: participants write the formula and the simulation loop themselves, then may ask an assistant to review. Full mode takes about 25 seconds; quick mode about 12. A frequent error is applying the lift to both arms, which gives a power of 5%.</p></aside>
+</section>
+
+<section class="slide" id="wrap-up" data-label="Wrap-up" data-n="37" data-session="4">
+  <div class="kicker">Day 1</div>
+  <h2>Three things to keep</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>Trigger, in both arms</h4><p class="small mb0">Analyse who could be affected, with the same rule in control.</p></div>
+    <div class="card c-coral"><h4>Check the split first</h4><p class="small mb0">A sample ratio mismatch voids the test; find the cause before any metric.</p></div>
+    <div class="card c-navy"><h4>Write the limits first</h4><p class="small mb0">A primary, guardrails with numbers, and a size from simulation, all before the test.</p></div>
+  </div>
+  <aside class="notes"><p>Ask each participant for one sentence on what they would check first in their own team's last test.</p></aside>
+</section>
+
+<section class="slide dark" id="next" data-label="Next" data-n="38" data-session="4">
+  <div class="kicker">Day 2</div>
+  <h2>Next: the same test, a narrower interval</h2>
+  <ul class="bullets">
+    <li>Capping the tail, and what it changes in the estimate</li>
+    <li>Pre-period data that removes most of the noise</li>
+    <li>Intervals for ratio metrics that respect the customer</li>
+  </ul>
+  <aside class="notes"><p>Nothing to prepare beyond keeping the environment working. Labs start from the generated stream, so nobody needs today's outputs.</p></aside>
+</section>
+</div>
+<script type="application/json" id="academy-data">{"v":1,"engine":"1.0.0","build":{"at":"2026-11-15T03:19:28Z","version":"2027.1.0","commit":"843acec"},"course":{"id":"ds-302","code":"DS-302","title":"Online Experiments and A/B Testing","track":"data-science","lang":"en","dir":"ltr","url":"https://sdaiaacademy.github.io/ds-302/","repo":"SDAIAAcademy/ds-302","home":"../index.html"},"deck":{"id":"day1","kind":"day","day":1,"label":"Day 1","title":"Trustworthy experiments","prev":null,"next":"day2.html","md":"day1.md","alt":{}},"sessions":[{"n":1,"label":"Session 1","title":"Assignment, exposure and triggering","slide":"s1","outcomes":["Separate assignment, exposure and the trigger condition in an event log","Compute a triggered effect and the diluted overall effect from it","Explain why counterfactual logging keeps the control group comparable"],"minutes":50,"lab":{"id":"1.1","title":"Triggered and diluted effects in SQL","minutes":25,"href":"../labs/D1_1_triggered_exposure.ipynb"}},{"n":2,"label":"Session 2","title":"Sample ratio mismatch and A/A tests","slide":"s2","outcomes":["Test a split against its plan with a chi-square test","Locate the cause of a mismatch by segment","Measure a false-positive rate with A/A reshuffles of real data"],"minutes":50,"lab":{"id":"1.2","title":"Sample ratio and A/A checks","minutes":25,"href":"../labs/D1_2_srm_aa_checks.ipynb"}},{"n":3,"label":"Session 3","title":"Metrics for AI features","slide":"s3","outcomes":["Choose a primary metric that the change can move and that matters to the decision","Set latency, cost and harm guardrails with thresholds from baseline data","Decide which event data a test may use under purpose limitation and data classification"],"minutes":50,"lab":{"id":"1.3","title":"A metric spec for AI-ranked search","minutes":25,"href":"../labs/D1_3_ai_search_metrics.ipynb"}},{"n":4,"label":"Session 4","title":"Power for heavy-tailed metrics","slide":"s4","outcomes":["Compute a sample size with the two-sample formula","Estimate power by simulation from historical data","Explain when the formula and the simulation disagree for a heavy-tailed metric"],"minutes":50,"lab":{"id":"1.4","title":"Power by simulation for the search test","minutes":25,"href":"../labs/D1_4_power_heavy_tails.ipynb"}}],"slides":[{"id":"title","n":1,"title":"Trustworthy experiments","kind":"title","session":0,"hash":"0a050039","md":"#### [day1#title] Trustworthy experiments\n\n*SDAIA Academy · Online Experiments and A/B Testing*\n\nDay 1: Before any interval: who was assigned, who was exposed, and whether the split can be trusted\n\nData Science Track · 4 teaching days + capstone day · 4 sessions · 4 labs · DS-302","notes":"Welcome the room and introduce yourself. Calibrating question: \"Who has seen a test result that was later reversed?\" Ask two people what went wrong; most answers will be about trust, not statistics, which is today's subject. The rhythm: four sessions, each about twenty minutes of ideas, a checkpoint, then a 25-minute lab. Press B for a break when the room needs one.","minutes":null,"lo":[]},{"id":"agenda","n":2,"title":"Trustworthy experiments","kind":"content","session":0,"hash":"4d33a523","md":"#### [day1#agenda] Trustworthy experiments\n\n*Today*\n\n- **Session 1 · Assignment, exposure and triggering**: Who was randomised, who saw the change, and why the triggered effect is the one to estimate\n- **Session 2 · Sample ratio mismatch and A/A tests**: A split that is not what was planned voids the result; A/A tests show the false-win rate the analysis really has\n- **Session 3 · Metrics for AI features**: A primary metric that measures the goal, and guardrails for what an AI feature adds: latency, cost and harm\n- **Session 4 · Power for heavy-tailed metrics**: Sample size from the formula and from simulation on the real distribution, for the population that is triggered","notes":"Today is about whether a test can be trusted at all, before anyone computes a clever interval: who was assigned, who was exposed, whether the split is what was planned, which metrics decide, and how many customers the test needs.","minutes":null,"lo":[]},{"id":"setup-check","n":3,"title":"One notebook proves your machine is ready","kind":"content","session":0,"hash":"bb363248","md":"#### [day1#setup-check] One notebook proves your machine is ready\n\n*Before the first lab*\n\n```bash\n# file: labs/\nuv sync\nuv run jupyter lab\n# then run 00_setup_check.ipynb\n```\n\nIn Colab, open the notebook from the course page: its first cell clones the repository and installs the libraries.\n\n- **Nothing to download**: no model, no dataset. The Sufrah data is generated on your machine with fixed seeds.\n- **No key**: no lab calls a hosted model; the chat-assistant test of Day 4 is analysed from its logs.\n- **Quick mode**: `SUFRAH_QUICK=1` uses 30,000 customers in place of 200,000. The slides quote full mode.","notes":"Ask everyone to run the setup check now, while you introduce the case. It prints the library versions and generates the stream (about 15 seconds on a laptop in full mode). On Windows, if an import fails with a long path error, set UV_PROJECT_ENVIRONMENT to a short folder before uv sync; labs/README.md says how. Ask who did the pre-work quiz on power and the two-sample test: Session 4 assumes it.","minutes":null,"lo":[]},{"id":"meet-sufrah","n":4,"title":"Sufrah tests everything, and now it tests AI features","kind":"content","session":0,"hash":"bb922bca","md":"#### [day1#meet-sufrah] Sufrah tests everything, and now it tests AI features\n\n*The case study*\n\n- **The marketplace.** A fictional food-delivery app in six Saudi cities: 200,000 active customers, restaurants, and couriers shared by everyone.\n- **Two AI features.** AI-ranked search (test T-101) and Luqma, an in-app chat assistant (T-401). Each adds latency, cost and new ways to harm.\n- **The people.** Rawan Al-Mubarak chairs the review board. Yazeed Al-Hamdan owns search. Joud Al-Fahad runs couriers. Waleed Al-Sharif protects data. You are Ruba Kamal, the analyst.\n\nAll data is synthetic, generated with fixed seeds: about two million orders over 28 pre-period and 28 test days.","notes":"The case runs through every lab and the capstone. Sufrah is fictional; no real company, person or customer data is involved. Point out that the generator also knows things no real test knows, such as each customer's outcome under both arms: Day 2 uses that to measure bias exactly.","minutes":null,"lo":[]},{"id":"s1","n":5,"title":"Assignment, exposure and triggering","kind":"section","session":1,"hash":"1c80abe1","md":"#### [day1#s1] Assignment, exposure and triggering\n\n*Session 1*\n\n- Separate assignment, exposure and the trigger condition in an event log\n- Compute a triggered effect and the diluted overall effect from it\n- Explain why counterfactual logging keeps the control group comparable","notes":"","minutes":null,"lo":["LO4"]},{"id":"three-events","n":6,"title":"Every test log records three different events","kind":"content","session":1,"hash":"703cb4f1","md":"#### [day1#three-events] Every test log records three different events\n\n*Assignment is not exposure*\n\n1. **1 · Eligible** Active in the last 90 days: all 200,000 customers\n2. **2 · Assigned** Day 0: a variant for each customer, 50/50\n3. **3 · Exposed** At the first search: the only moment the ranking can matter\n\n> **Triggering.** Analyse the customers whose exposure condition held, in both arms. The others can only add noise.","notes":"Press once per step. The trigger condition here is \"searched at least once in the test period\". Ask: who in this room has analysed a test over everyone assigned when only a fraction could see the change? It is the most common way a real effect disappears into noise.","minutes":null,"lo":["LO4"]},{"id":"counterfactual-logging","n":7,"title":"Log the trigger in control, where nothing visible happens","kind":"content","session":1,"hash":"ac3cde49","md":"#### [day1#counterfactual-logging] Log the trigger in control, where nothing visible happens\n\n*The control group must be triggered too*\n\n- **Wrong.** Triggered treatment customers compared with all control customers. The groups differ in who they are: searchers order more.\n- **Right.** Control logs \"would have seen the AI ranking\" at the same moment. Both arms are cut by the same rule, so randomisation still holds inside the cut.\n\n> **The trigger must not depend on the treatment.** A search happens before the ranking is shown, so the rule is safe. \"Clicked a result\" would not be.","notes":"In Lab 1.1 the trigger rates are 42.45% in control and 42.63% in treatment (chi-square p = 0.40): balanced, as they must be. If a feature changes who triggers (for example a trigger defined by an event the new ranking causes), the triggered comparison is biased and you must fall back to the assigned population.","minutes":null,"lo":["LO4"]},{"id":"exposure-sql","n":8,"title":"Exposure is one left join and a minimum","kind":"content","session":1,"hash":"6362a56f","md":"#### [day1#exposure-sql] Exposure is one left join and a minimum\n\n*Lab 1.1, step 2*\n\n```sql\n-- file: exposure.sql\nselect a.customer_id, a.variant, f.exposed_day\nfrom assignments a\nleft join (select customer_id, min(day) as exposed_day\n           from searches where day >= 0\n           group by customer_id) f\n  on f.customer_id = a.customer_id\n```\n\n- **Left join**: a customer who never searched stays, with a NULL exposure day.\n- The same pattern counts orders per customer: `coalesce(o.orders, 0)` keeps the customers who did not order.","notes":"The commonest bug in this lab is an inner join to orders, which silently drops every customer with zero orders and inflates both means. Ask the room what that does to the difference: it changes the population, so it is no longer a randomised comparison. DuckDB runs the queries directly on the pandas tables; PostgreSQL would run the same SQL.","minutes":null,"lo":["LO4"]},{"id":"diluted-vs-triggered","n":9,"title":"The triggered lift is nearly twice the diluted one","kind":"content","session":1,"hash":"552aac5b","md":"#### [day1#diluted-vs-triggered] The triggered lift is nearly twice the diluted one\n\n*Measured in Lab 1.1, full mode*\n\n| Population | Customers | Orders per customer, difference | 95% interval | Relative |\n| --- | --- | --- | --- | --- |\n| All assigned (diluted) | 200,000 | +0.104 | +0.049 to +0.159 | +2.0% |\n| Triggered | 85,080 | +0.253 | +0.163 to +0.343 | +3.9% |\n\n> **Dilution.** Overall difference ≈ triggered difference × trigger rate: 0.253 × 0.425 = 0.108, against 0.104 measured.","notes":"Numbers from the solution run of Lab 1.1 in full mode; quick mode shows the same pattern with wider intervals. The triggered estimate is 5.5 standard errors from zero, the diluted one 3.7. Report the triggered effect for the decision about search, and the diluted one when someone asks what it does for the whole business.","minutes":null,"lo":["LO4"]},{"id":"dilution-formula","n":10,"title":"Untriggered customers add variance and no signal","kind":"content","session":1,"hash":"9d0c6dad","md":"#### [day1#dilution-formula] Untriggered customers add variance and no signal\n\n*Why dilution costs power*\n\n- The effect shrinks by the trigger rate, here 0.425.\n- The noise does not shrink: 57% of the customers still vary.\n- Dividing the effect by 0.425 multiplies the customers needed by 1 / 0.425² ≈ 5.5; the assigned population is only 1 / 0.425 ≈ 2.4 times the triggered one.\n\n**5.5 vs 3.7** standard errors from zero: triggered against diluted (Lab 1.1)","notes":"The rough rule assumes similar variance in both groups; here the searchers order more and vary more, which is why the gain in z is smaller than the rule suggests. The exact comparison is the two z values on the slide.","minutes":null,"lo":["LO4"]},{"id":"check-trigger","n":11,"title":"Which comparison estimates the effect of AI ranking?","kind":"quiz","session":1,"hash":"f19530d8","md":"#### [day1#check-trigger] Which comparison estimates the effect of AI ranking?\n\n*Checkpoint*\n\n**Question:** T-101 assigned 200,000 customers; 85,080 searched. You want the effect of the new ranking on the people it can reach. Which comparison do you report?\n\n- A. Treatment customers who searched against all control customers\n- B. Customers who searched in treatment against customers who searched in control\n- C. All treatment customers against all control customers, because it uses more data\n- D. Each searcher's orders before and after the first search","notes":"Answer: B. If many pick C, return to the dilution slide: C is unbiased for a different question and has less power. If many pick A, return to counterfactual logging.","minutes":null,"lo":["LO4"]},{"id":"lab-1-1","n":12,"title":"Triggered and diluted effects in SQL","kind":"lab","session":1,"hash":"8323f453","md":"#### [day1#lab-1-1] Triggered and diluted effects in SQL\n\nLab 1.1 · 25 min\n\nTrace assignment and exposure in SQL and compare the triggered effect with the diluted overall effect, on the event stream of the AI-ranked search test.\n\n[D1_1_triggered_exposure.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D1_1_triggered_exposure.ipynb)\n\n- [ ] Read the four tables and their keys (4 min)\n- [ ] Join assignments to the first search: who was exposed, when (6 min)\n- [ ] Orders per customer, all assigned against triggered, in SQL (6 min)\n- [ ] Two effects with intervals, and the dilution formula (6 min)\n- [ ] Check: exposure is balanced between the arms (3 min)\n- [ ] ✱ Stretch: Count only orders after exposure and say what changes","notes":"AI-tutor lab: an assistant may explain SQL, not write the queries. Walk the room for the inner-join bug (counts of customers per arm fall below 100,000 in step 3) and for a query that counts pre-period orders (no filter on day). The stretch: orders after exposure only lower the control mean because the days before exposure are left out in both arms; the difference barely moves.","minutes":null,"lo":[]},{"id":"s2","n":13,"title":"Sample ratio mismatch and A/A tests","kind":"section","session":2,"hash":"aaf1d884","md":"#### [day1#s2] Sample ratio mismatch and A/A tests\n\n*Session 2*\n\n- Test a split against its plan with a chi-square test\n- Locate the cause of a mismatch by segment\n- Measure a false-positive rate with A/A reshuffles of real data","notes":"","minutes":null,"lo":["LO6"]},{"id":"srm-what","n":14,"title":"A split that differs from its plan voids the result","kind":"content","session":2,"hash":"62953cd6","md":"#### [day1#srm-what] A split that differs from its plan voids the result\n\n*The first check on every test*\n\n- Planned 50/50; observed 50,221 control and 49,028 treatment in T-203.\n- A chi-square test against the plan: p = 0.00015.\n- The users who went missing were not missing at random, so the remaining arms are no longer comparable.\n\n**49.4%** treatment share in T-203: small to the eye, decisive to the test\n\n> **Never read the metrics of a test that fails this check.** Find the cause first.","notes":"Numbers from Lab 1.2 (data/srm_tests.csv). Platforms commonly flag a split at p below 0.001; the threshold is strict because the check runs on every test, often every day. The lift of a test with a mismatch may be produced entirely by who was lost.","minutes":null,"lo":["LO6"]},{"id":"srm-causes","n":15,"title":"Most mismatches come from what happens after assignment","kind":"content","session":2,"hash":"94f557bc","md":"#### [day1#srm-causes] Most mismatches come from what happens after assignment\n\n*Where mismatches come from*\n\n- **Lost.** The treatment crashes or loads slower on one build, so its users never log an exposure.\n- **Filtered.** A bot filter or a data-quality rule removes more users from one arm.\n- **Redirected.** A treatment that redirects or reloads assigns some users twice or not at all.\n\nDiagnose by splitting the counts by every dimension that could lose users unevenly: platform, build, day, browser.","notes":"In Lab 1.2 the split by app build shows the cause at once: build 7.4 has a treatment share of 46.4% (p far below 0.001) while every other build is near 50%. The split by day shows a treatment share below 50% on 11 of 14 days, which points to a permanent cause, not an outage.","minutes":null,"lo":["LO6"]},{"id":"srm-by-build","n":16,"title":"One Android build loses one treatment user in seven","kind":"content","session":2,"hash":"abb8968a","md":"#### [day1#srm-by-build] One Android build loses one treatment user in seven\n\n*Lab 1.2, step 3*\n\n| Item | Value |\n| --- | --- |\n| iOS 17.2 | 50.3% |\n| iOS 17.3 | 50.1% |\n| Android 7.3 | 50.6% |\n| Android 7.4 | 46.4% |\n| Web | 49.3% |\n\nTreatment share of T-203 users by app build, 14 days.","notes":"The bars are the treatment shares from the solution run. The planted cause: the new checkout page fails on build 7.4 before the exposure is logged, so 14% of that build's treatment users disappear. The fix is engineering, then a rerun; no reweighting rescues the original test.","minutes":null,"lo":["LO6"]},{"id":"aa-tests","n":17,"title":"Reshuffle real data to measure the false-win rate you really have","kind":"content","session":2,"hash":"0520fb82","md":"#### [day1#aa-tests] Reshuffle real data to measure the false-win rate you really have\n\n*A/A tests*\n\n1. Take 28 days of pre-period revenue per customer.\n2. Split the customers at random into two halves.\n3. Run the analysis you plan to use. Record p.\n4. Repeat 500 times. Count p below 0.05.\n\n**5.8%** false wins over 500 reshuffles (expected 5% ± 1.9)\n\n- The customer-level Welch test is calibrated on Sufrah's heavy-tailed revenue.","notes":"From Lab 1.2 step 4, full mode. An A/A rate well above 5% means the analysis is wrong for the data, most often because the unit of analysis is smaller than the unit of randomisation. The stretch shows it: split by customer, test at the order level, and the rate rises. Day 2 session 3 repairs it with the delta method.","minutes":null,"lo":["LO6"]},{"id":"novelty","n":18,"title":"A new feature can win because it is new","kind":"content","session":2,"hash":"1e415b45","md":"#### [day1#novelty] A new feature can win because it is new\n\n*A trust problem in time*\n\n- **Novelty**: customers try the change because it is different; the lift fades.\n- **Primacy**: customers used to the old version resist; the lift grows.\n- Check the effect by week since first exposure, not only in total.\n\n- **Day 4.** Luqma, the chat assistant, lifts orders by 5.8% in week one and by nothing measurable in week four. Lab 4.1 measures it.","notes":"The Luqma numbers are previewed here and computed in Lab 4.1. Run long enough to see the settled effect; two full weeks is a common minimum because weekday patterns also matter. A test stopped early on a novelty lift ships a feature whose value disappears.","minutes":null,"lo":["LO6"]},{"id":"check-srm","n":19,"title":"The result looks good, the split does not","kind":"quiz","session":2,"hash":"113254fc","md":"#### [day1#check-srm] The result looks good, the split does not\n\n*Checkpoint*\n\n**Question:** A 50/50 test shows +3% orders with p = 0.002. Its sample ratio check gives p = 0.0004: the treatment arm has 1.2% fewer users than planned. What do you do?\n\n- A. Report the lift: the arms are large and the gap is only 1.2%\n- B. Reweight the treatment arm up to 50% and report the adjusted lift\n- C. Report no result, find where users are lost, fix it and rerun\n- D. Correct both p-values for multiple testing and report what survives","notes":"Answer: C. Follow-up question: where would you look first? By platform and build, then by day, then by entry point.","minutes":null,"lo":["LO6"]},{"id":"lab-1-2","n":20,"title":"Sample ratio and A/A checks","kind":"lab","session":2,"hash":"2e984968","md":"#### [day1#lab-1-2] Sample ratio and A/A checks\n\nLab 1.2 · 25 min\n\nRun A/A and sample ratio checks on three tests and name the faulty one, then find the segment that causes the mismatch.\n\n[D1_2_srm_aa_checks.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D1_2_srm_aa_checks.ipynb)\n\n- [ ] Users per arm for three tests (3 min)\n- [ ] A chi-square sample ratio test for each (5 min)\n- [ ] Find the platform and build that lose users (6 min)\n- [ ] A/A: 500 reshuffles of the pre-period, the false-win rate (7 min)\n- [ ] Name the faulty test and its cause in one line (4 min)\n- [ ] ✱ Stretch: Run the A/A at the order level and explain the higher rate","notes":"AI-tutor lab. The usual mistake in step 2 is passing the shares rather than the counts to the chi-square test: p is then never small. In step 4 a participant who calls the t-test with equal_var=True still gets about 5%; the point is the reshuffle, not the variant of the test. Quick mode uses 200 reshuffles, so its band is wider.","minutes":null,"lo":[]},{"id":"s3","n":21,"title":"Metrics for AI features","kind":"section","session":3,"hash":"f8079ef3","md":"#### [day1#s3] Metrics for AI features\n\n*Session 3*\n\n- Choose a primary metric that the change can move and that matters to the decision\n- Set latency, cost and harm guardrails with thresholds from baseline data\n- Decide which event data a test may use under purpose limitation and data classification","notes":"","minutes":null,"lo":["LO4"]},{"id":"primary-vs-guardrail","n":22,"title":"One primary metric decides; guardrails can only veto","kind":"content","session":3,"hash":"46cb4cb8","md":"#### [day1#primary-vs-guardrail] One primary metric decides; guardrails can only veto\n\n*Metric roles*\n\n| Role | Question it answers | T-101 example |\n| --- | --- | --- |\n| **Primary** | Did the change do what it is for? | Orders per triggered customer, 28 days |\n| **Guardrail** | Did it break something we will not trade? | Search latency, model cost, complaints |\n| **Diagnostic** | Why did it move? | Clicks on the first result, searches per session |\n\n> **A guardrail is not a second primary.** A guardrail that \"improved\" does not rescue a primary that did not move.","notes":"Ask the room for the primary metric of T-101 before showing the table. Revenue per customer is tempting; Lab 1.4 shows it needs about twice the traffic of orders per customer for the same 2% lift. Diagnostics explain, they never decide.","minutes":null,"lo":["LO4"]},{"id":"ai-adds-three","n":23,"title":"A model call adds latency, cost and new harms","kind":"content","session":3,"hash":"5730735d","md":"#### [day1#ai-adds-three] A model call adds latency, cost and new harms\n\n*What an AI feature adds*\n\n- **Latency.** Every search waits for the model. Measure the tail: p95, not the mean.\n- **Cost.** A price per call, paid on every search, forever. Measure per 1,000 searches.\n- **Harm.** Wrong or unavailable items ranked first, unsafe answers, unfair exposure. Measure complaints and flags.\n\nThe SDAIA Generative AI Guidelines ask that the risks of a generative feature be assessed and monitored; a harm guardrail is how a test does it.","notes":"The keyword ranking costs almost nothing per search; the AI ranking costs about SAR 5.8 per 1,000 searches in the ramp. Over a year of searches that is a number finance will ask about. Sources: SDAIA Generative AI Guidelines for Government and for the Public (course sources).","minutes":null,"lo":["LO4"]},{"id":"ramp-baselines","n":24,"title":"The ramp shows latency and cost at once, not the effect","kind":"content","session":3,"hash":"041c877c","md":"#### [day1#ramp-baselines] The ramp shows latency and cost at once, not the effect\n\n*Lab 1.3, step 1: the 7-day ramp*\n\n|  | p50 latency | p95 latency | Cost per 1,000 searches |\n| --- | --- | --- | --- |\n| Keyword ranking | 379 ms | 676 ms | SAR 0.2 |\n| AI ranking | 543 ms | 1,095 ms | SAR 5.8 |\n\n5% of searches on the AI ranking for seven days: about 6,000 searches. Too few to see a 2% change in orders; plenty to see a 400 ms tail.","notes":"Numbers from the solution run of Lab 1.3, full mode. The median rises by 164 ms but the p95 by about 420 ms: the AI ranking's tail is long. Thresholds set from these baselines are defensible; thresholds set after the test are not.","minutes":null,"lo":["LO4"]},{"id":"guardrail-spec","n":25,"title":"A guardrail is a metric, a direction and a number, written before the test","kind":"content","session":3,"hash":"3c5133d0","md":"#### [day1#guardrail-spec] A guardrail is a metric, a direction and a number, written before the test\n\n*Writing a guardrail*\n\n```json\n// file: T101_metric_spec.json\n{\"metric\": \"search latency p95 (ms), treatment minus control\",\n \"kind\": \"latency\", \"direction\": \"at most\", \"threshold\": 300},\n{\"metric\": \"inference cost per 1,000 searches (SAR)\",\n \"kind\": \"cost\", \"direction\": \"at most\", \"threshold\": 8.0},\n{\"metric\": \"complaints per 1,000 orders, upper 95% bound of the difference\",\n \"kind\": \"harm\", \"direction\": \"at most\", \"threshold\": 1.0, \"harm\": true}\n```\n\n> **Harm guardrails use the interval.** The upper bound must stay under the line: \"no evidence of harm\" is not enough.","notes":"The harm guardrail is a non-inferiority test: the change passes only if the interval rules out a rise of more than one complaint per 1,000 orders. Ask why the latency threshold is on the difference and the cost threshold on the treatment level: latency is relative to what customers have now, cost is a budget.","minutes":null,"lo":["LO4"]},{"id":"purpose-limitation","n":26,"title":"A test may read only the data its purpose needs","kind":"content","session":3,"hash":"53abc5ca","md":"#### [day1#purpose-limitation] A test may read only the data its purpose needs\n\n*Lab 1.3, step 4*\n\n- The **Personal Data Protection Law** lets a controller process personal data for the purposes it was collected for, and asks that it be limited to the minimum necessary.\n- The **NDMO Data Classification Policy** has four levels: Top Secret, Secret, Restricted, Public. The level sets how data is protected, not whether this use is allowed.\n\n| Field | Use in T-101? |\n| --- | --- |\n| complaint category | yes |\n| complaint text | no: the category suffices |\n| exact delivery coordinates | no: city suffices |\n| allergy profile | no: health data |","notes":"The decision in the lab follows Sufrah's privacy notice, which lists product improvement as a purpose. Waleed Al-Sharif's answer allows seven fields of twelve. Sources: Personal Data Protection Law (articles on purpose and minimum necessary content) and the NDMO Data Classification Policy, read in the official SDAIA files; see the course sources. The classification policy is written for public entities; Sufrah uses its levels as a house scheme.","minutes":null,"lo":["LO4"]},{"id":"check-metrics","n":27,"title":"The primary wins, a guardrail fails","kind":"quiz","session":3,"hash":"2b0f949a","md":"#### [day1#check-metrics] The primary wins, a guardrail fails\n\n*Checkpoint*\n\n**Question:** The AI ranking lifts orders by 3.9% (interval well above zero). Its p95 latency is 420 ms worse; the pre-registered limit was 300 ms. What does the spec say?\n\n- A. Not a launch as is: the latency guardrail fails, so the decision rule applies\n- B. Launch: a 3.9% lift is worth more than 120 ms\n- C. Raise the latency limit to 450 ms and launch\n- D. Report latency as a side note to the primary result","notes":"Answer: A. This is exactly the situation of T-101 in Lab 4.3; the decision rule there says \"iterate\" because a non-harm guardrail failed.","minutes":null,"lo":["LO4"]},{"id":"lab-1-3","n":28,"title":"A metric spec for AI-ranked search","kind":"lab","session":3,"hash":"43975f66","md":"#### [day1#lab-1-3] A metric spec for AI-ranked search\n\nLab 1.3 · 25 min\n\nDefine a primary metric and latency, cost and harm guardrails for the AI-ranked search test from its ramp data, and decide which fields the analysis may use.\n\n[D1_3_ai_search_metrics.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D1_3_ai_search_metrics.ipynb)\n\n- [ ] Baselines from the ramp: latency, cost, conversion, complaints (6 min)\n- [ ] The primary metric and its unit (4 min)\n- [ ] Three guardrails with thresholds and directions (6 min)\n- [ ] The data inventory: which fields the test may use (6 min)\n- [ ] Save the metric spec (3 min)\n- [ ] ✱ Stretch: Add a guardrail that protects small restaurants and say how you would measure it","notes":"AI-tutor lab. Steps 2 and 3 have no single right answer; the checks test the structure (per customer, triggered, numeric thresholds, a harm guardrail). Step 4 has one answer: compare with the reference. Common error: allowing the search text \"to measure relevance\". Ask what metric it serves; the categories serve the metrics.","minutes":null,"lo":[]},{"id":"s4","n":29,"title":"Power for heavy-tailed metrics","kind":"section","session":4,"hash":"d2d90303","md":"#### [day1#s4] Power for heavy-tailed metrics\n\n*Session 4*\n\n- Compute a sample size with the two-sample formula\n- Estimate power by simulation from historical data\n- Explain when the formula and the simulation disagree for a heavy-tailed metric","notes":"","minutes":null,"lo":["LO4"]},{"id":"power-recap","n":30,"title":"Sample size grows with the variance and with one over the effect squared","kind":"content","session":4,"hash":"3a495f4f","md":"#### [day1#power-recap] Sample size grows with the variance and with one over the effect squared\n\n*From the pre-work*\n\n```python\n# file: formula\nn_per_arm = 2 * (z_0.975 + z_0.80)**2 * sd**2 / delta**2\n          = 2 * 7.85 * sd**2 / delta**2\n```\n\n- Halve the effect: four times the customers.\n- Halve the standard deviation: a quarter of them.\n- Day 2 is about the second line.","notes":"This recaps DS-205 and the pre-work. If the entry quiz showed gaps, spend two minutes on the meaning of power: the chance that a test with the planned size detects an effect of the planned size.","minutes":null,"lo":["LO4"]},{"id":"heavy-tail","n":31,"title":"Revenue per customer has a long tail of group orders","kind":"content","session":4,"hash":"456696da","md":"#### [day1#heavy-tail] Revenue per customer has a long tail of group orders\n\n*Lab 1.4, step 1*\n\n- **511** mean SAR, 28 days, customers who search\n- **295** median SAR\n- **9.4%** of revenue from the top 1% of customers\n\nStandard deviation 747 SAR, largest customer 31,104 SAR: catering and group orders, about one order in a hundred.","notes":"Numbers from the pre-period of the T-101 stream, full mode. Ask what a mean twice the median tells you before any histogram. The tail is real business, not an error: Day 2 decides whether to cap it.","minutes":null,"lo":["LO4"]},{"id":"power-by-simulation","n":32,"title":"Simulate the test you will run on the data you have","kind":"content","session":4,"hash":"d0568e6d","md":"#### [day1#power-by-simulation] Simulate the test you will run on the data you have\n\n*Power by simulation*\n\n```python\n# file: Lab 1.4 · sim_power\nfor _ in range(sims):\n    c = rng.choice(values, n)                  # control arm from history\n    t = rng.choice(values, n) * (1 + lift)     # treatment arm, lifted\n    hits += ttest_ind(t, c, equal_var=False).pvalue \u003c 0.05\npower = hits / sims\n```\n\n- Keeps the real distribution, tail included.\n- Works for any analysis: capping, triggering, a sequential plan, a ratio metric.","notes":"The multiplicative lift assumes every customer changes by the same proportion. It is a modelling choice; an additive lift or a lift concentrated in light users gives other answers, which is a good stretch question.","minutes":null,"lo":["LO4"]},{"id":"formula-vs-sim","n":33,"title":"At 84,000 per arm the formula and the simulation agree","kind":"content","session":4,"hash":"e05b5ac5","md":"#### [day1#formula-vs-sim] At 84,000 per arm the formula and the simulation agree\n\n*Lab 1.4, full mode, 400 simulations*\n\n| Customers per arm | Simulated power | Formula |\n| --- | --- | --- |\n| 20,924 | 0.31 | 0.29 |\n| 41,849 | 0.57 | 0.51 |\n| 83,699 | 0.77 | 0.80 |\n| 104,623 | 0.85 | 0.88 |\n\n> **What the formula hides.** Its standard deviation came from one sample. A sample that missed a few giant orders gives a sigma, and a size, that are too small.","notes":"With 400 simulations the simulated power has a standard error of about 0.02, so 0.77 against 0.80 is agreement. At these sizes the mean of tens of thousands of heavy-tailed values is close to normal. Ask the room to try the formula with the standard deviation of a 2,000-customer subsample: the answer jumps around.","minutes":null,"lo":["LO4"]},{"id":"traffic","n":34,"title":"Revenue needs twice the traffic of orders for the same 2% lift","kind":"content","session":4,"hash":"5c72159d","md":"#### [day1#traffic] Revenue needs twice the traffic of orders for the same 2% lift\n\n*Lab 1.4, step 5*\n\n| Item | Value |\n| --- | --- |\n| Revenue per customer | 83,699 per arm, about 55 days |\n| Orders per customer | 41,480 per arm, about 27 days |\n\n> **So T-101 runs 28 days on orders per triggered customer.** Revenue becomes a guardrail with a one-sided limit.","notes":"Days are computed from the average arrival of triggered customers (85,080 in 28 days), which is optimistic: most of the people who will ever search do so in the first days. Plan whole weeks. Day 2 shows how pre-period data would cut the revenue requirement sharply.","minutes":null,"lo":["LO4"]},{"id":"check-power","n":35,"title":"How many customers for a smaller effect?","kind":"quiz","session":4,"hash":"ec786d4a","md":"#### [day1#check-power] How many customers for a smaller effect?\n\n*Checkpoint*\n\n**Question:** A test needs 41,000 customers per arm to detect a 2% lift in orders with 80% power. The product manager now wants to detect 1%. Roughly how many per arm?\n\n- A. 82,000\n- B. 58,000\n- C. 20,500\n- D. 164,000","notes":"Answer: D. Then ask whether Sufrah has 328,000 triggered customers in four weeks. It does not; the answer is a longer test, a less noisy metric, or Day 2's methods.","minutes":null,"lo":["LO4"]},{"id":"lab-1-4","n":36,"title":"Power by simulation for the search test","kind":"lab","session":4,"hash":"6bf1be89","md":"#### [day1#lab-1-4] Power by simulation for the search test\n\nLab 1.4 · 25 min\n\nSize the search test by simulation on revenue per user and compare with the textbook formula, for triggered customers.\n\n[D1_4_power_heavy_tails.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D1_4_power_heavy_tails.ipynb)\n\n- [ ] Revenue per triggered customer: mean, spread, tail (4 min)\n- [ ] The formula: customers per arm for a 2% lift (5 min)\n- [ ] Power by simulation at that size (7 min)\n- [ ] A power curve and the size for 80% power (5 min)\n- [ ] Weeks of traffic needed, and the same for orders per customer (4 min)\n- [ ] ✱ Stretch: Repeat with a 1% lift and say whether the test is worth running","notes":"AI-off for the first attempt: participants write the formula and the simulation loop themselves, then may ask an assistant to review. Full mode takes about 25 seconds; quick mode about 12. A frequent error is applying the lift to both arms, which gives a power of 5%.","minutes":null,"lo":[]},{"id":"wrap-up","n":37,"title":"Three things to keep","kind":"content","session":4,"hash":"eca086b4","md":"#### [day1#wrap-up] Three things to keep\n\n*Day 1*\n\n- **Trigger, in both arms.** Analyse who could be affected, with the same rule in control.\n- **Check the split first.** A sample ratio mismatch voids the test; find the cause before any metric.\n- **Write the limits first.** A primary, guardrails with numbers, and a size from simulation, all before the test.","notes":"Ask each participant for one sentence on what they would check first in their own team's last test.","minutes":null,"lo":[]},{"id":"next","n":38,"title":"Next: the same test, a narrower interval","kind":"content","session":4,"hash":"a39d0ea6","md":"#### [day1#next] Next: the same test, a narrower interval\n\n*Day 2*\n\n- Capping the tail, and what it changes in the estimate\n- Pre-period data that removes most of the noise\n- Intervals for ratio metrics that respect the customer","notes":"Nothing to prepare beyond keeping the environment working. Labs start from the generated stream, so nobody needs today's outputs.","minutes":null,"lo":[]}],"activities":[{"id":"check-trigger-q1","slide":"check-trigger","type":"single","prompt":"T-101 assigned 200,000 customers; 85,080 searched. You want the effect of the new ranking on the people it can reach. Which comparison do you report?","options":[{"key":"A","text":"Treatment customers who searched against all control customers"},{"key":"B","text":"Customers who searched in treatment against customers who searched in control"},{"key":"C","text":"All treatment customers against all control customers, because it uses more data"},{"key":"D","text":"Each searcher's orders before and after the first search"}],"correct":[1],"explanation":"The same trigger rule in both arms keeps randomisation intact inside the triggered group, and leaves out customers the ranking could not affect.","misconceptions":["Treats the trigger as a property of treatment only: the two groups then differ in who they are, not only in the ranking","","Assumes more data is always better: the untriggered customers add noise and no effect","Confuses exposure with assignment: the timing of the first search is not randomised, so before and after is not a controlled comparison"],"lo":["LO4"]},{"id":"check-srm-q1","slide":"check-srm","type":"single","prompt":"A 50/50 test shows +3% orders with p = 0.002. Its sample ratio check gives p = 0.0004: the treatment arm has 1.2% fewer users than planned. What do you do?","options":[{"key":"A","text":"Report the lift: the arms are large and the gap is only 1.2%"},{"key":"B","text":"Reweight the treatment arm up to 50% and report the adjusted lift"},{"key":"C","text":"Report no result, find where users are lost, fix it and rerun"},{"key":"D","text":"Correct both p-values for multiple testing and report what survives"}],"correct":[2],"explanation":"A mismatch means assignment did not work as planned, so the arms are no longer comparable. No analysis of the outcome repairs that.","misconceptions":["Thinks a mismatch only costs a little precision; the missing users can create the whole lift","Assumes reweighting can restore randomisation; it cannot recover who was lost or why","","Treats the sample ratio check as one more metric to correct for multiplicity, not as a test of the experiment itself"],"lo":["LO6"]},{"id":"check-metrics-q1","slide":"check-metrics","type":"single","prompt":"The AI ranking lifts orders by 3.9% (interval well above zero). Its p95 latency is 420 ms worse; the pre-registered limit was 300 ms. What does the spec say?","options":[{"key":"A","text":"Not a launch as is: the latency guardrail fails, so the decision rule applies"},{"key":"B","text":"Launch: a 3.9% lift is worth more than 120 ms"},{"key":"C","text":"Raise the latency limit to 450 ms and launch"},{"key":"D","text":"Report latency as a side note to the primary result"}],"correct":[0],"explanation":"Guardrails were written before the test so that a good primary cannot buy them off. The rule decides what follows: for T-101, iterate on latency.","misconceptions":["","Treats guardrails as weights to trade against the primary, which is what writing them in advance prevents","Moves the threshold after seeing the data, which turns the guardrail into decoration","Confuses a guardrail with a diagnostic: latency here is a limit, not an explanation"],"lo":["LO4"]},{"id":"check-power-q1","slide":"check-power","type":"single","prompt":"A test needs 41,000 customers per arm to detect a 2% lift in orders with 80% power. The product manager now wants to detect 1%. Roughly how many per arm?","options":[{"key":"A","text":"82,000"},{"key":"B","text":"58,000"},{"key":"C","text":"20,500"},{"key":"D","text":"164,000"}],"correct":[3],"explanation":"The sample size grows with one over the effect squared: half the effect needs four times the customers.","misconceptions":["Assumes sample size grows in proportion to precision, when it grows with its square","Applies the square root the wrong way round","Confuses halving the effect with halving the power",""],"lo":["LO4"]}],"ai":{"context":{"course":"../context/course.md","courseJs":"../context/course.js","day":"day1.md","llms":"../llms.txt"},"tasks":[],"tools":[]},"bridge":{"allowedOrigins":[]},"features":{},"strings":{}}</script>
+<script src="../_engine/academy.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+[
+ false,
+ 0.27,
+ {
+  "decision": "stop",
+  "fault": "peeking: on day 9 z = 2.19 against a planned boundary of 3.47; no day crossed, and the planned day-28 analysis gives z = 0.27, no effect"
+ }
+]

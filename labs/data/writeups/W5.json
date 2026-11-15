@@ -1,0 +1,9 @@
+{
+ "cost_change": -0.06,
+ "earnings_change": -0.042,
+ "earnings_ci": [
+  -0.059,
+  -0.025
+ ],
+ "earnings_threshold": -0.02
+}

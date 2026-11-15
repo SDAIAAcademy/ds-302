@@ -1,0 +1,28 @@
+{
+ "changes": [
+  {
+   "id": "C1",
+   "name": "AI-written dish descriptions",
+   "owner": "Yazeed Al-Hamdan",
+   "goal": "more orders from menus that had no description",
+   "customers": 160000,
+   "harm": "a description that names an ingredient the dish does not have"
+  },
+  {
+   "id": "C2",
+   "name": "Luqma with an allergen checker",
+   "owner": "Rawan Al-Mubarak",
+   "goal": "keep Luqma's lift without the wrong-information complaints of T-401",
+   "customers": 120000,
+   "harm": "a wrong ingredient or allergen answer"
+  },
+  {
+   "id": "C3",
+   "name": "AI-ranked restaurant list on the home page",
+   "owner": "Yazeed Al-Hamdan",
+   "goal": "more first orders in a session",
+   "customers": 200000,
+   "harm": "small restaurants pushed off the first screen (share of orders to restaurants under 20 orders a day)"
+  }
+ ]
+}

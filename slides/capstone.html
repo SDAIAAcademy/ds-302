@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-ax="deck" data-track="data-science">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capstone · The capstone review board · Online Experiments and A/B Testing</title>
+<meta name="generator" content="SDAIA Academy engine 1.0.0">
+<link rel="icon" href="../_engine/icon.svg">
+<link rel="alternate" type="text/markdown" href="capstone.md">
+<link rel="describedby" href="../llms.txt">
+<link rel="stylesheet" href="../_engine/academy.css">
+</head>
+<body>
+<div class="deck" data-course="Online Experiments and A/B Testing" data-track="data-science" data-day="Capstone">
+<section class="slide title" id="title" data-auto="title" data-label="Welcome" data-n="1">
+  <div class="kicker">SDAIA Academy · Online Experiments and A/B Testing</div>
+  <h1>The capstone review board</h1>
+  <p class="lead mt">Capstone: Each participant defends a design and analysis pack in ten minutes: seven to present, three for the board</p>
+  <div class="meta"><span class="track">Data Science Track</span><span>4 teaching days + capstone day</span><span>7 min talk and demo · 3 min Q&amp;A</span><span>DS-302</span></div>
+  <aside class="notes"><p>Today is theirs: keep your own talking to the opening and the closing. The room is Rawan Al-Mubarak's review board for the day: each participant brings a design and analysis pack for one AI-feature change and defends it. Confirm the running order and that every repository opens on this screen; ask each participant to have the starter or their own analysis ready to rerun.</p></aside>
+</section>
+
+<section class="slide" id="agenda" data-label="Agenda" data-n="2">
+  <div class="kicker">Capstone</div>
+  <h2>How the review board runs</h2>
+  <div class="agenda">
+    <div class="item now"><div><b>The brief and final prep</b><small>the rubric, the board's questions, a last rerun of each analysis</small></div></div>
+    <div class="item"><div><b>Defences</b><small>seven minutes to present, three for the board, one participant at a time</small></div></div>
+    <div class="item"><div><b>Review and closing</b><small>peer feedback, the trainer's review, what next</small></div></div>
+  </div>
+  <aside class="notes"><p>With eight participants the defences take about 100 minutes including changeovers. Breaks are not slides: press B when the room needs one.</p></aside>
+</section>
+
+<section class="slide" id="the-brief" data-label="The brief" data-n="3">
+  <div class="kicker">The brief</div>
+  <h2>One AI-feature change, designed, analysed and decided</h2>
+  <table class="t small">
+    <tr><th>Change</th><th>Goal</th><th>Harm to guard against</th></tr>
+    <tr><td>C1 · AI-written dish descriptions</td><td>more orders from menus without a description</td><td>an ingredient the dish does not have</td></tr>
+    <tr><td>C2 · Luqma with an allergen checker</td><td>keep Luqma's lift without T-401's harm</td><td>a wrong ingredient or allergen answer</td></tr>
+    <tr><td>C3 · AI-ranked restaurant list</td><td>more first orders in a session</td><td>small restaurants pushed off the first screen</td></tr>
+  </table>
+  <p class="small mt">The pack: pre-registration, sequential plan, trust checks, variance-reduced analysis, guardrails, one-page recommendation. Data from <code>sufrah.capstone_data()</code>; brief in <code>labs/capstone/README.md</code>.</p>
+  <aside class="notes"><p>Participants chose in Lab 4.4. C3's harm is not a complaint count: watch how they define it, since a vague harm guardrail cannot fail. The simulator's true lifts are in sufrah.py for trainers; the capstone is assessed on the design and the defence, not on recovering them.</p></aside>
+</section>
+
+<section class="slide" id="rubric" data-label="The rubric" data-n="4">
+  <div class="kicker">How packs are scored</div>
+  <h2>The rubric</h2>
+  <div class="bars">
+    <div class="row"><span>Design and power</span><div class="bar c-teal" style="--w:100%"></div><span class="val">25%</span></div>
+    <div class="row"><span>Analysis</span><div class="bar c-cyan" style="--w:100%"></div><span class="val">25%</span></div>
+    <div class="row"><span>Monitoring and guardrails</span><div class="bar c-coral" style="--w:80%"></div><span class="val">20%</span></div>
+    <div class="row"><span>Recommendation</span><div class="bar c-purple" style="--w:80%"></div><span class="val">20%</span></div>
+    <div class="row"><span>Reproducibility</span><div class="bar c-amber" style="--w:40%"></div><span class="val">10%</span></div>
+  </div>
+  <div class="callout tip mt"><b>Every number reruns.</b> A number the board cannot regenerate from the repository scores as a claim, not a result.</div>
+  <aside class="notes"><p>Full marks, briefly. Design and power: a pre-registration written before looking at the test columns, a power calculation on the pre-period, a written rule. Analysis: adjusted and unadjusted intervals with the sample-size gain. Monitoring and guardrails: a sequential plan with its false-positive rate measured, and a harm guardrail judged on a bound. Recommendation: Lab 4.3's page, decision first. Reproducibility: a clean clone reruns it.</p></aside>
+</section>
+
+<section class="slide" id="format" data-label="Format" data-n="5">
+  <div class="kicker">Format</div>
+  <h2>Ten minutes: seven to present, three for the board</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>1 · The change and its risk</h4><p class="small mb0">Who it is for, what could go wrong, the harm guardrail. One slide.</p></div>
+    <div class="card c-cyan"><h4>2 · The design</h4><p class="small mb0">Unit, metrics, limits, power, the sequential plan, the rule.</p></div>
+    <div class="card c-coral"><h4>3 · The result and the decision</h4><p class="small mb0">The effect with its interval, the guardrails, launch, iterate or stop.</p></div>
+  </div>
+  <div class="callout note mt"><b>Peer feedback.</b> After each defence, everyone writes one strength, one question and one suggestion.</div>
+  <aside class="notes"><p>Stop the presenter at seven minutes; what was not said is not scored. The three minutes of questions are the review-board defence, 20% of the course result.</p></aside>
+</section>
+
+<section class="slide" id="board-questions" data-label="The board's questions" data-n="6">
+  <div class="kicker">What the board asks</div>
+  <h2>One live change, then two questions</h2>
+  <div class="cols cols-2">
+    <div class="card c-navy"><h4>The live change</h4><p class="small mb0">The assessor changes the traffic (for example, halves it) or the pre-period (for example, 14 days in place of 28). The participant reruns the power calculation and says what can still be detected and what they would change.</p></div>
+    <ul class="bullets small">
+      <li>"Your harm rate is lower in treatment. Is that evidence the harm is gone?"</li>
+      <li>"Why this spending function, not a fixed horizon?"</li>
+      <li>"Your raw interval includes zero and the adjusted one does not. Which do you report?"</li>
+      <li>"What would make you stop this test on day 10?"</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>Use one live change for everyone so the defences are comparable: halving the traffic works for all three changes, and so does a 14-day pre-period, which lowers the correlation the adjustment relies on. The starter takes <code>--customers</code>, <code>--pre-days</code> and <code>--seed</code>. For the adjusted-versus-raw question, the expected answer is that the pre-registered estimator decides, and both are reported.</p></aside>
+</section>
+
+<section class="slide order" id="running-order" data-label="Running order" data-n="7">
+  <div class="kicker">Running order</div>
+  <h2>Who defends when</h2>
+  <table class="t small">
+    <tr><th>#</th><th>Participant</th><th>Change</th></tr>
+    <tr><td>1</td><td><input placeholder="name"></td><td><input placeholder="C1, C2 or C3"></td></tr>
+    <tr><td>2</td><td><input placeholder="name"></td><td><input placeholder="C1, C2 or C3"></td></tr>
+    <tr><td>3</td><td><input placeholder="name"></td><td><input placeholder="C1, C2 or C3"></td></tr>
+    <tr><td>4</td><td><input placeholder="name"></td><td><input placeholder="C1, C2 or C3"></td></tr>
+    <tr><td>5</td><td><input placeholder="name"></td><td><input placeholder="C1, C2 or C3"></td></tr>
+    <tr><td>6</td><td><input placeholder="name"></td><td><input placeholder="C1, C2 or C3"></td></tr>
+    <tr><td>7</td><td><input placeholder="name"></td><td><input placeholder="C1, C2 or C3"></td></tr>
+    <tr><td>8</td><td><input placeholder="name"></td><td><input placeholder="C1, C2 or C3"></td></tr>
+  </table>
+  <aside class="notes"><p>Type the names in at the start; the fields can be edited live and are not saved, so keep the list in your notes too. Group participants by change so the board compares like with like.</p></aside>
+</section>
+
+<section class="slide dark" id="final-prep" data-label="Before the first defence" data-n="8">
+  <div class="kicker">Before the first defence</div>
+  <h1>Final prep · 20 minutes</h1>
+  <div class="timer" data-minutes="20"></div>
+  <p class="lead">Rerun your analysis from a clean clone, rehearse once, open your repository on this screen.</p>
+  <aside class="notes"><p>Press T to start the timer. Walk the room and ask each participant to rerun their power calculation once: anyone whose code does not rerun has twenty minutes to fix it.</p></aside>
+</section>
+
+<section class="slide dark presenting" id="now-presenting" data-label="Now presenting" data-n="9">
+  <div class="kicker center">Now defending</div>
+  <div class="center"><input placeholder="Participant · change"></div>
+  <div class="timers mt">
+    <div><h3>Present</h3><div class="timer" data-minutes="7"></div></div>
+    <div><h3>The board</h3><div class="timer" data-minutes="3"></div></div>
+  </div>
+  <aside class="notes"><p>Type the participant's name and press T to start the timer. Reuse this slide for every defence. Score the rubric during the talk and the defence during the questions.</p></aside>
+</section>
+
+<section class="slide" id="review" data-label="Trainer review" data-n="10">
+  <div class="kicker">Trainer review</div>
+  <h2>What the defences showed</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>Strongest patterns</h4><p class="small mb0">What several packs got right.</p></div>
+    <div class="card c-coral"><h4>Common gaps</h4><p class="small mb0">What most packs would fix next.</p></div>
+    <div class="card c-purple"><h4>One surprise</h4><p class="small mb0">Something nobody expected.</p></div>
+  </div>
+  <aside class="notes"><p>Fill these in from your scoring notes during the last break. Name packs for strengths; keep gaps anonymous. Gaps worth looking for: harm judged on the estimate rather than the bound, a power calculation that ignores the pre-period, a recommendation that argues instead of applying the rule.</p></aside>
+</section>
+
+<section class="slide" id="what-next" data-label="After the course" data-n="11">
+  <div class="kicker">After the course</div>
+  <h2>Keep going</h2>
+  <ul class="bullets">
+    <li><b>Follow-up task:</b> review one experiment from your workplace, or a public write-up, against the board's checklist of Lab 4.4.</li>
+    <li><b>Your pack stays yours:</b> keep it rerunnable and add the next design you named today.</li>
+    <li><b>When you cannot randomise:</b> DS-303 Causal Inference from Observational Data.</li>
+    <li><b>Deciding with heterogeneous effects:</b> DS-402 Causal Machine Learning and Policy Evaluation.</li>
+  </ul>
+  <aside class="notes"><p>The follow-up task is tracked; tell participants when it is due and where to submit it.</p></aside>
+</section>
+
+<section class="slide dark" id="thanks" data-label="Thank you" data-n="12">
+  <div class="kicker">SDAIA Academy</div>
+  <h1>Thank you</h1>
+  <p class="lead">Online Experiments and A/B Testing</p>
+</section>
+</div>
+<script type="application/json" id="academy-data">{"v":1,"engine":"1.0.0","build":{"at":"2026-11-15T03:19:28Z","version":"2027.1.0","commit":"843acec"},"course":{"id":"ds-302","code":"DS-302","title":"Online Experiments and A/B Testing","track":"data-science","lang":"en","dir":"ltr","url":"https://sdaiaacademy.github.io/ds-302/","repo":"SDAIAAcademy/ds-302","home":"../index.html"},"deck":{"id":"capstone","kind":"capstone","day":5,"label":"Capstone","title":"The capstone review board","prev":"day4.html","next":null,"md":"capstone.md","alt":{}},"sessions":[],"slides":[{"id":"title","n":1,"title":"The capstone review board","kind":"title","session":0,"hash":"ad4264fe","md":"#### [capstone#title] The capstone review board\n\n*SDAIA Academy · Online Experiments and A/B Testing*\n\nCapstone: Each participant defends a design and analysis pack in ten minutes: seven to present, three for the board\n\nData Science Track · 4 teaching days + capstone day · 7 min talk and demo · 3 min Q&A · DS-302","notes":"Today is theirs: keep your own talking to the opening and the closing. The room is Rawan Al-Mubarak's review board for the day: each participant brings a design and analysis pack for one AI-feature change and defends it. Confirm the running order and that every repository opens on this screen; ask each participant to have the starter or their own analysis ready to rerun.","minutes":null,"lo":[]},{"id":"agenda","n":2,"title":"How the review board runs","kind":"content","session":0,"hash":"25c9f01e","md":"#### [capstone#agenda] How the review board runs\n\n*Capstone*\n\n- **The brief and final prep**: the rubric, the board's questions, a last rerun of each analysis\n- **Defences**: seven minutes to present, three for the board, one participant at a time\n- **Review and closing**: peer feedback, the trainer's review, what next","notes":"With eight participants the defences take about 100 minutes including changeovers. Breaks are not slides: press B when the room needs one.","minutes":null,"lo":[]},{"id":"the-brief","n":3,"title":"One AI-feature change, designed, analysed and decided","kind":"content","session":0,"hash":"579c7b15","md":"#### [capstone#the-brief] One AI-feature change, designed, analysed and decided\n\n*The brief*\n\n| Change | Goal | Harm to guard against |\n| --- | --- | --- |\n| C1 · AI-written dish descriptions | more orders from menus without a description | an ingredient the dish does not have |\n| C2 · Luqma with an allergen checker | keep Luqma's lift without T-401's harm | a wrong ingredient or allergen answer |\n| C3 · AI-ranked restaurant list | more first orders in a session | small restaurants pushed off the first screen |\n\nThe pack: pre-registration, sequential plan, trust checks, variance-reduced analysis, guardrails, one-page recommendation. Data from `sufrah.capstone_data()`; brief in `labs/capstone/README.md`.","notes":"Participants chose in Lab 4.4. C3's harm is not a complaint count: watch how they define it, since a vague harm guardrail cannot fail. The simulator's true lifts are in sufrah.py for trainers; the capstone is assessed on the design and the defence, not on recovering them.","minutes":null,"lo":[]},{"id":"rubric","n":4,"title":"The rubric","kind":"content","session":0,"hash":"41d54cb4","md":"#### [capstone#rubric] The rubric\n\n*How packs are scored*\n\n| Item | Value |\n| --- | --- |\n| Design and power | 25% |\n| Analysis | 25% |\n| Monitoring and guardrails | 20% |\n| Recommendation | 20% |\n| Reproducibility | 10% |\n\n> **Every number reruns.** A number the board cannot regenerate from the repository scores as a claim, not a result.","notes":"Full marks, briefly. Design and power: a pre-registration written before looking at the test columns, a power calculation on the pre-period, a written rule. Analysis: adjusted and unadjusted intervals with the sample-size gain. Monitoring and guardrails: a sequential plan with its false-positive rate measured, and a harm guardrail judged on a bound. Recommendation: Lab 4.3's page, decision first. Reproducibility: a clean clone reruns it.","minutes":null,"lo":[]},{"id":"format","n":5,"title":"Ten minutes: seven to present, three for the board","kind":"content","session":0,"hash":"edefad2e","md":"#### [capstone#format] Ten minutes: seven to present, three for the board\n\n*Format*\n\n- **1 · The change and its risk.** Who it is for, what could go wrong, the harm guardrail. One slide.\n- **2 · The design.** Unit, metrics, limits, power, the sequential plan, the rule.\n- **3 · The result and the decision.** The effect with its interval, the guardrails, launch, iterate or stop.\n\n> **Peer feedback.** After each defence, everyone writes one strength, one question and one suggestion.","notes":"Stop the presenter at seven minutes; what was not said is not scored. The three minutes of questions are the review-board defence, 20% of the course result.","minutes":null,"lo":[]},{"id":"board-questions","n":6,"title":"One live change, then two questions","kind":"content","session":0,"hash":"051784d8","md":"#### [capstone#board-questions] One live change, then two questions\n\n*What the board asks*\n\n- **The live change.** The assessor changes the traffic (for example, halves it) or the pre-period (for example, 14 days in place of 28). The participant reruns the power calculation and says what can still be detected and what they would change.\n\n- \"Your harm rate is lower in treatment. Is that evidence the harm is gone?\"\n- \"Why this spending function, not a fixed horizon?\"\n- \"Your raw interval includes zero and the adjusted one does not. Which do you report?\"\n- \"What would make you stop this test on day 10?\"","notes":"Use one live change for everyone so the defences are comparable: halving the traffic works for all three changes, and so does a 14-day pre-period, which lowers the correlation the adjustment relies on. The starter takes `--customers`, `--pre-days` and `--seed`. For the adjusted-versus-raw question, the expected answer is that the pre-registered estimator decides, and both are reported.","minutes":null,"lo":[]},{"id":"running-order","n":7,"title":"Who defends when","kind":"order","session":0,"hash":"dd6756b9","md":"#### [capstone#running-order] Who defends when\n\n*Running order*\n\n| # | Participant | Change |\n| --- | --- | --- |\n| 1 |  |  |\n| 2 |  |  |\n| 3 |  |  |\n| 4 |  |  |\n| 5 |  |  |\n| 6 |  |  |\n| 7 |  |  |\n| 8 |  |  |","notes":"Type the names in at the start; the fields can be edited live and are not saved, so keep the list in your notes too. Group participants by change so the board compares like with like.","minutes":null,"lo":[]},{"id":"final-prep","n":8,"title":"Final prep · 20 minutes","kind":"content","session":0,"hash":"0ae359e4","md":"#### [capstone#final-prep] Final prep · 20 minutes\n\n*Before the first defence*\n\nRerun your analysis from a clean clone, rehearse once, open your repository on this screen.","notes":"Press T to start the timer. Walk the room and ask each participant to rerun their power calculation once: anyone whose code does not rerun has twenty minutes to fix it.","minutes":null,"lo":[]},{"id":"now-presenting","n":9,"title":"Present","kind":"presenting","session":0,"hash":"5a7d7793","md":"#### [capstone#now-presenting] Present\n\n*Now defending*\n\n##### The board","notes":"Type the participant's name and press T to start the timer. Reuse this slide for every defence. Score the rubric during the talk and the defence during the questions.","minutes":null,"lo":[]},{"id":"review","n":10,"title":"What the defences showed","kind":"content","session":0,"hash":"4f468728","md":"#### [capstone#review] What the defences showed\n\n*Trainer review*\n\n- **Strongest patterns.** What several packs got right.\n- **Common gaps.** What most packs would fix next.\n- **One surprise.** Something nobody expected.","notes":"Fill these in from your scoring notes during the last break. Name packs for strengths; keep gaps anonymous. Gaps worth looking for: harm judged on the estimate rather than the bound, a power calculation that ignores the pre-period, a recommendation that argues instead of applying the rule.","minutes":null,"lo":[]},{"id":"what-next","n":11,"title":"Keep going","kind":"content","session":0,"hash":"add6eff3","md":"#### [capstone#what-next] Keep going\n\n*After the course*\n\n- **Follow-up task:** review one experiment from your workplace, or a public write-up, against the board's checklist of Lab 4.4.\n- **Your pack stays yours:** keep it rerunnable and add the next design you named today.\n- **When you cannot randomise:** DS-303 Causal Inference from Observational Data.\n- **Deciding with heterogeneous effects:** DS-402 Causal Machine Learning and Policy Evaluation.","notes":"The follow-up task is tracked; tell participants when it is due and where to submit it.","minutes":null,"lo":[]},{"id":"thanks","n":12,"title":"Thank you","kind":"content","session":0,"hash":"3dd11bd6","md":"#### [capstone#thanks] Thank you\n\n*SDAIA Academy*\n\nOnline Experiments and A/B Testing","notes":"","minutes":null,"lo":[]}],"activities":[],"ai":{"context":{"course":"../context/course.md","courseJs":"../context/course.js","day":"capstone.md","llms":"../llms.txt"},"tasks":[],"tools":[]},"bridge":{"allowedOrigins":[]},"features":{},"strings":{}}</script>
+<script src="../_engine/academy.js"></script>
+</body>
+</html>

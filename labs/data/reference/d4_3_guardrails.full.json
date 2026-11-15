@@ -1,0 +1,34 @@
+[
+ {
+  "metric": "search latency p95 (ms), treatment minus control",
+  "value": 405.0,
+  "threshold": 300,
+  "direction": "at most",
+  "harm": false,
+  "holds": false
+ },
+ {
+  "metric": "inference cost per 1,000 searches (SAR), treatment",
+  "value": 5.801422800781793,
+  "threshold": 8.0,
+  "direction": "at most",
+  "harm": false,
+  "holds": true
+ },
+ {
+  "metric": "complaints per 1,000 orders, upper 95% bound of the difference",
+  "value": 0.3624801473811739,
+  "threshold": 1.0,
+  "direction": "at most",
+  "harm": true,
+  "holds": true
+ },
+ {
+  "metric": "revenue per triggered customer, lower 95% bound of the relative difference",
+  "value": 0.01644628077628582,
+  "threshold": -0.01,
+  "direction": "at least",
+  "harm": false,
+  "holds": true
+ }
+]

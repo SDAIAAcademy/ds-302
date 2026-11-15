@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-ax="deck" data-track="data-science">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 2 · Precision · Online Experiments and A/B Testing</title>
+<meta name="generator" content="SDAIA Academy engine 1.0.0">
+<link rel="icon" href="../_engine/icon.svg">
+<link rel="alternate" type="text/markdown" href="day2.md">
+<link rel="describedby" href="../llms.txt">
+<link rel="stylesheet" href="../_engine/academy.css">
+</head>
+<body>
+<div class="deck" data-course="Online Experiments and A/B Testing" data-track="data-science" data-day="Day 2">
+<section class="slide title" id="title" data-auto="title" data-label="Welcome" data-n="1">
+  <div class="kicker">SDAIA Academy · Online Experiments and A/B Testing</div>
+  <h1>Precision</h1>
+  <p class="lead mt">Day 2: The same test, a narrower interval: capping, pre-period data, ratio metrics and strata</p>
+  <div class="meta"><span class="track">Data Science Track</span><span>4 teaching days + capstone day</span><span>4 sessions · 4 labs</span><span>DS-302</span></div>
+  <aside class="notes"><p>Open with yesterday's number: T-101's triggered effect on orders was +0.253 with an interval from +0.163 to +0.343. Today the same data gives an interval half as wide, without a single extra customer. Ask the room to guess how.</p></aside>
+</section>
+
+<section class="slide" id="agenda" data-auto="agenda" data-label="Agenda" data-n="2">
+  <div class="kicker">Today</div>
+  <h2>Precision</h2>
+  <div class="agenda"><div class="item"><div><b>Session 1 · Variance and heavy tails</b><small>Group orders make revenue noisy; capping cuts the variance and changes what is estimated</small></div></div><div class="item"><div><b>Session 2 · Regression adjustment</b><small>Pre-period behaviour predicts test behaviour; removing what it predicts narrows the interval</small></div></div><div class="item"><div><b>Session 3 · Ratio metrics</b><small>Orders per session is a ratio of two sums per customer; its interval must respect the randomisation unit</small></div></div><div class="item"><div><b>Session 4 · Stratification</b><small>Cities differ; using that in design or analysis removes between-city noise, sometimes by little</small></div></div></div>
+  <aside class="notes"><p>Four ways to a narrower interval or a correct one: capping the tail, pre-period data, intervals for ratio metrics that respect the randomisation unit, and strata. All on the T-101 stream.</p></aside>
+</section>
+
+<section class="slide" id="review-day1" data-lo="LO6" data-label="Review" data-n="3">
+  <div class="kicker">Review of Day 1</div>
+  <h2>Which check comes first?</h2>
+  <div class="quiz" data-type="single" data-lo="LO6" data-id="review-day1-q1">
+    <p class="lead">Ruba receives the results of a 28-day test with a 4% lift on the primary metric, all guardrails green. Which check does she run before reading any of it?</p>
+    <div class="opts">
+      <div class="opt" data-why="Puts precision before validity: a narrower interval on a broken test is still broken" data-k="A">Regression adjustment, to narrow the interval</div>
+      <div class="opt" data-why="Treats many segments as the first risk, when a broken split would void every segment too" data-k="B">A false discovery correction over the segments</div>
+      <div class="opt" data-ok data-k="C">The sample ratio check on the assignment counts</div>
+      <div class="opt" data-why="Confuses a planning tool with a check of a finished test" data-k="D">A power calculation for the observed effect</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> If the split is not what was planned, no metric of the test can be trusted, so that check comes before every other.</div>
+  </div>
+  <aside class="notes"><p>Answer: C. Ask one participant to say where they would look if it failed (platform, build, day). Two minutes, then move on.</p></aside>
+</section>
+
+<!-- ======================= SESSION 1 ======================= -->
+<section class="slide section" id="s1" data-auto="section" data-session="1" data-n="4">
+  <div class="kicker">Session 1</div>
+  <h1>Variance and heavy tails</h1>
+  <ul class="bullets outcomes"><li>Measure how a few large orders drive the variance of revenue per customer</li><li>Cap a metric at a percentile of the pooled data</li><li>Report the bias and the variance a cap trades</li></ul>
+  <div class="sess-no">01</div>
+</section>
+
+<section class="slide" id="variance-sources" data-lo="LO1" data-label="Where variance lives" data-n="5" data-session="1">
+  <div class="kicker">Lab 2.1, step 1</div>
+  <h2>One customer in a hundred carries half the variance of revenue</h2>
+  <div class="cols cols-3">
+    <div class="stat"><div class="big">753</div><div class="lbl">SAR, standard deviation of revenue per triggered customer</div></div>
+    <div class="stat"><div class="big">536</div><div class="lbl">SAR, the same without the top 1% of customers</div></div>
+    <div class="stat"><div class="big">49%</div><div class="lbl">of the variance from that top 1%</div></div>
+  </div>
+  <p class="small mt">85,080 triggered customers, 561,609 test-period orders. About one order in a hundred is a group order worth many baskets.</p>
+  <aside class="notes"><p>Numbers from the solution run of Lab 2.1, full mode. The variance of a mean is the variance of the metric over n: half the variance in a few customers means half the width of the interval decided by who placed a catering order this month.</p></aside>
+</section>
+
+<section class="slide" id="capping-rule" data-lo="LO1" data-label="Capping" data-n="6" data-session="1">
+  <div class="kicker">Capping, also called winsorising</div>
+  <h2>Count each order up to a cap set from both arms pooled</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="Lab 2.1"><code class="language-python">cap = orders.value.quantile(<span class="hljs-number">0.99</span>)   <span class="hljs-comment"># pooled</span>
+v = orders.value.clip(upper=cap)
+revenue = v.groupby(orders.customer_id).<span class="hljs-built_in">sum</span>()</code></pre>
+    <table class="t small">
+      <tr><th>Cap</th><th class="num">SAR</th></tr>
+      <tr><td>99.9th percentile</td><td class="num">1,402</td></tr>
+      <tr><td>99th percentile</td><td class="num">337</td></tr>
+      <tr><td>95th percentile</td><td class="num">184</td></tr>
+    </table>
+  </div>
+  <div class="callout warn mt"><b>Never set the cap per arm.</b> A cap that depends on the treatment can create a difference on its own.</div>
+  <aside class="notes"><p>Cap percentiles are from the pooled test-period orders of triggered customers. In a real programme the cap is fixed in the pre-registration, from historical data, before the test starts. Ask: what does a cap at the 99th percentile mean for a customer who places one SAR 2,000 catering order? It counts as SAR 337.</p></aside>
+</section>
+
+<section class="slide" id="cap-changes-estimand" data-lo="LO1" data-label="A new estimand" data-n="7" data-session="1">
+  <div class="kicker">The price of a cap</div>
+  <h2>A capped metric estimates a different, smaller effect</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li>The ranking adds orders, some of them group orders.</li>
+      <li>Capped, those orders count for less: the effect on the capped metric is smaller than on revenue.</li>
+      <li>That gap is a <b>bias</b> if the decision is about revenue.</li>
+    </ul>
+    <div class="card c-purple"><h4>Only in synthetic data</h4><p class="small mb0">The generator knows every customer's orders under both arms, so the true effect of each cap is exact. No real test can measure this bias; a simulation can.</p></div>
+  </div>
+  <aside class="notes"><p>This is why the course uses synthetic data: the potential outcomes (_potential in the stream) let you compute the true uncapped effect, 17.91 SAR per triggered customer, and the true effect under each cap. In practice you estimate the bias the same way, by simulating on historical data.</p></aside>
+</section>
+
+<section class="slide" id="cap-tradeoff" data-lo="LO1" data-label="The trade" data-n="8" data-session="1">
+  <div class="kicker">Lab 2.1, full mode</div>
+  <h2>The 99th-percentile cap gives the smallest total error</h2>
+  <table class="t">
+    <tr><th>Cap</th><th class="num">Estimate</th><th class="num">Standard error</th><th class="num">True effect</th><th class="num">Bias against uncapped</th><th class="num">Root mean square error</th></tr>
+    <tr><td>none</td><td class="num">20.13</td><td class="num">5.16</td><td class="num">17.91</td><td class="num">0</td><td class="num">5.16</td></tr>
+    <tr><td>99.9th</td><td class="num">19.71</td><td class="num">4.34</td><td class="num">17.37</td><td class="num">-0.54</td><td class="num">4.37</td></tr>
+    <tr class="hl"><td>99th</td><td class="num">19.11</td><td class="num">4.02</td><td class="num">16.70</td><td class="num">-1.21</td><td class="num">4.20</td></tr>
+    <tr><td>95th</td><td class="num">17.92</td><td class="num">3.72</td><td class="num">15.91</td><td class="num">-1.99</td><td class="num">4.23</td></tr>
+  </table>
+  <p class="small mt-s">SAR per triggered customer over 28 days.</p>
+  <aside class="notes"><p>Read the columns in order: the standard error falls as the cap tightens, the bias grows, and the root mean square error (bias and noise together) bottoms out at the 99th percentile. The 95th is close behind; with a smaller test the noise would dominate and a tighter cap would win. Note the uncapped estimate, 20.13, against the truth, 17.91: one test's noise is larger than any cap's bias.</p></aside>
+</section>
+
+<section class="slide" id="cap-reporting" data-lo="LO1" data-label="Reporting" data-n="9" data-session="1">
+  <div class="kicker">Writing it down</div>
+  <h2>Pre-register the cap, report the uncapped result beside it</h2>
+  <ol class="bullets">
+    <li>The percentile and the data it comes from: pooled, before the test.</li>
+    <li>What the metric now means: revenue with each order counted up to SAR 337.</li>
+    <li>The uncapped estimate in the appendix, so nobody wonders what was hidden.</li>
+  </ol>
+  <div class="callout tip mt"><b>Capping is not deleting.</b> The large orders stay in the data; they just stop deciding the interval.</div>
+  <aside class="notes"><p>Deleting outliers changes the population; capping keeps every customer and limits each order's influence. Ask the room whether their own dashboards cap, and at what. Many platforms offer a percentile cap as a metric setting; check the documentation of the one you use.</p></aside>
+</section>
+
+<section class="slide" id="check-capping" data-lo="LO1" data-n="10" data-session="1">
+  <div class="kicker">Checkpoint</div>
+  <h2>Where does the cap come from?</h2>
+  <div class="quiz" data-type="single" data-lo="LO1" data-id="check-capping-q1">
+    <p class="lead">Ruba wants to cap order value at the 99th percentile for T-101's revenue metric. Which data should set the cap?</p>
+    <div class="opts">
+      <div class="opt" data-ok data-k="A">Order values from both arms pooled, or from history before the test</div>
+      <div class="opt" data-why="Thinks the control arm is neutral, but a cap from one arm still treats the arms differently" data-k="B">Order values of the control arm only</div>
+      <div class="opt" data-why="Believes each arm deserves its own percentile, which makes the metric depend on the treatment" data-k="C">Each arm's own 99th percentile</div>
+      <div class="opt" data-why="Chooses the cap after seeing the result, which lets the analyst pick a favourable estimate" data-k="D">Whichever cap gives the smallest p-value</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A cap must be the same rule for both arms and fixed independently of the result; pooled or historical data does both.</div>
+  </div>
+  <aside class="notes"><p>Answer: A. Option D happens more often than people admit; call it what it is, a forking path.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-2-1" data-auto="lab" data-lab="2.1" data-label="Lab 2.1" data-n="11" data-session="1">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 2.1 · 25 min</div><h2>Capping order value</h2><p class="lead small">Measure how capping order value changes variance and bias, using the potential outcomes the generator knows.</p><a class="nb" href="../labs/D2_1_capping.ipynb">D2_1_capping.ipynb</a></div><ul class="checklist"><li>Where the variance of revenue comes from <span class="min">5 min</span></li><li>Cap at the pooled 99th and 99.9th percentiles <span class="min">5 min</span></li><li>Effect and standard error under each cap <span class="min">6 min</span></li><li>Bias against the true uncapped effect <span class="min">5 min</span></li><li>Choose a cap and write the reason <span class="min">4 min</span></li><li class="stretch">✱ Stretch: Cap per customer instead of per order and compare</li></ul></div>
+  <aside class="notes"><p>AI-tutor lab. Watch for customers with no order dropped from the revenue Series (the reindex with fill_value=0 is the fix) and for caps computed per arm. Full mode runs in a few seconds.</p></aside>
+</section>
+
+<!-- ======================= SESSION 2 ======================= -->
+<section class="slide section" id="s2" data-auto="section" data-session="2" data-n="12">
+  <div class="kicker">Session 2</div>
+  <h1>Regression adjustment</h1>
+  <ul class="bullets outcomes"><li>Estimate the CUPED coefficient from pre-period data</li><li>Compute adjusted and unadjusted intervals</li><li>Report the variance reduction as an effective sample-size gain</li></ul>
+  <div class="sess-no">02</div>
+</section>
+
+<section class="slide" id="habits-persist" data-lo="LO1" data-label="Habits" data-n="13" data-session="2">
+  <div class="kicker">The idea</div>
+  <h2>Last month's orders predict this month's, whatever the arm</h2>
+  <div class="cols cols-2">
+    <div class="stat"><div class="big">0.85</div><div class="lbl">correlation between orders in the 28 pre-period days and the 28 test days, triggered customers</div></div>
+    <ul class="bullets small">
+      <li>Most of the variance between customers is habit, and habit was there before the test.</li>
+      <li>Remove what the pre-period predicts and the remaining noise is small.</li>
+      <li>The pre-period cannot carry the effect: it ended before assignment.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>Correlation from Lab 2.2, full mode. For revenue the correlation is lower, 0.59, because group orders are not habits. Ask what a correlation of zero would mean: nothing to gain.</p></aside>
+</section>
+
+<section class="slide" id="cuped-formula" data-lo="LO1" data-label="CUPED" data-n="14" data-session="2">
+  <div class="kicker">CUPED</div>
+  <h2>Subtract theta times the centred pre-period metric</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="Lab 2.2"><code class="language-python">theta = cov(y, x) / var(x)       <span class="hljs-comment"># both arms pooled</span>
+y_cuped = y - theta * (x - x.mean())
+diff_ci(y_cuped, t)</code></pre>
+    <ul class="bullets small">
+      <li>Same expected difference: the term has mean zero in each arm.</li>
+      <li>Variance multiplied by 1 - rho²: here 0.27.</li>
+      <li>theta = 0.864 for orders in T-101.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>The method was published by Deng, Xu, Kohavi and Walker (2013) under the name CUPED. GrowthBook's documentation describes the same estimator, with theta from a regression of post-exposure on pre-exposure data pooled across the variations, and 14 days of pre-exposure data by default. Sources: the CUPED paper and GrowthBook's CUPED page (course sources).</p></aside>
+</section>
+
+<section class="slide" id="cuped-result" data-lo="LO1" data-label="The result" data-n="15" data-session="2">
+  <div class="kicker">Lab 2.2, full mode</div>
+  <h2>The interval halves; the estimate stays compatible</h2>
+  <table class="t">
+    <tr><th>Orders per triggered customer</th><th class="num">Difference</th><th class="num">Standard error</th><th class="num">95% interval</th></tr>
+    <tr><td>Unadjusted</td><td class="num">+0.253</td><td class="num">0.046</td><td class="num">+0.163 to +0.343</td></tr>
+    <tr class="hl"><td>Adjusted (CUPED)</td><td class="num">+0.226</td><td class="num">0.024</td><td class="num">+0.179 to +0.273</td></tr>
+  </table>
+  <div class="cols cols-2 mt">
+    <div class="stat"><div class="big">73%</div><div class="lbl">less variance</div></div>
+    <div class="stat"><div class="big">3.7×</div><div class="lbl">the customers an unadjusted test would need for the same precision</div></div>
+  </div>
+  <aside class="notes"><p>This is LO1's evidence: unadjusted and adjusted intervals with the effective sample-size gain. The estimate moved from 0.253 to 0.226 because the treatment arm happened to have slightly heavier orderers before the test (6.449 against 6.418 orders); the adjustment corrects that chance imbalance. Both are estimates of the same effect.</p></aside>
+</section>
+
+<section class="slide" id="cuped-regression" data-lo="LO1" data-label="As a regression" data-n="16" data-session="2">
+  <div class="kicker">The same thing, as a regression</div>
+  <h2>Regression adjustment gives the same number to four decimals</h2>
+  <pre class="code" data-file="Lab 2.2, step 4"><code class="language-python">d = df.assign(xc=df.orders_pre - df.orders_pre.mean())
+fit = smf.ols(<span class="hljs-string">&quot;orders ~ treat + xc&quot;</span>, data=d).fit(cov_type=<span class="hljs-string">&quot;HC2&quot;</span>)
+fit.params[<span class="hljs-string">&quot;treat&quot;</span>], fit.bse[<span class="hljs-string">&quot;treat&quot;</span>]    <span class="hljs-comment"># 0.2261, 0.0241</span></code></pre>
+  <ul class="bullets small mt-s">
+    <li>The regression form extends to several covariates: pre-period orders, revenue, city.</li>
+    <li>Use robust standard errors; centre the covariate so the treatment coefficient is the average effect.</li>
+  </ul>
+  <aside class="notes"><p>With one covariate and theta pooled, CUPED and the regression with a common slope are the same estimator. With many covariates, keep them few and measured before assignment; a covariate measured after assignment can carry part of the effect.</p></aside>
+</section>
+
+<section class="slide" id="effective-n" data-lo="LO1" data-label="Effective size" data-n="17" data-session="2">
+  <div class="kicker">Reporting the saving</div>
+  <h2>Report the gain as customers: it is what the business buys</h2>
+  <div class="bars">
+    <div class="row"><span>Orders, 28 pre-period days</span><div class="bar c-teal" style="--w:100%"></div><span class="val">3.7× the customers</span></div>
+    <div class="row"><span>Revenue, 28 pre-period days</span><div class="bar c-cyan" style="--w:41%"></div><span class="val">about 1.5×</span></div>
+  </div>
+  <p class="small mt">Gain = 1 / (1 - rho²). Orders: rho = 0.85. Revenue: rho = 0.59, so 1 / (1 - 0.34) ≈ 1.5.</p>
+  <div class="callout tip mt-s"><b>For T-101</b>: a revenue test that needed 55 days on Day 1 needs far fewer with capping and adjustment together.</div>
+  <aside class="notes"><p>The revenue gain is computed from the correlation printed in the lab's look-at step (0.586). Capping first raises it, because the uncorrelated group orders lose weight. The stretch compares 14 and 28 pre-period days.</p></aside>
+</section>
+
+<section class="slide" id="check-cuped" data-lo="LO1" data-n="18" data-session="2">
+  <div class="kicker">Checkpoint</div>
+  <h2>What can go into the adjustment?</h2>
+  <div class="quiz" data-type="single" data-lo="LO1" data-id="check-cuped-q1">
+    <p class="lead">Ruba wants a stronger adjustment for T-101 and considers adding one more covariate to the regression. Which one is safe?</p>
+    <div class="opts">
+      <div class="opt" data-why="Ignores that searches after assignment can be changed by the new ranking, so the covariate carries part of the effect" data-k="A">Number of searches during the test</div>
+      <div class="opt" data-why="Treats an outcome of the test as a covariate, which removes the effect itself" data-k="B">Revenue during the test</div>
+      <div class="opt" data-why="Forgets that the trigger day depends on behaviour during the test, which the treatment may affect in other tests" data-k="C">Day of the first search in the test</div>
+      <div class="opt" data-ok data-k="D">Revenue in the 28 pre-period days</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A covariate measured before assignment cannot be changed by the treatment, so adjusting for it removes noise without removing effect.</div>
+  </div>
+  <aside class="notes"><p>Answer: D. Option C is subtle: in T-101 the first search is not affected by the ranking, but the rule "before assignment" is the one to remember.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-2-2" data-auto="lab" data-lab="2.2" data-label="Lab 2.2" data-n="19" data-session="2">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 2.2 · 25 min</div><h2>Regression adjustment with 28 pre-period days</h2><p class="lead small">Adjust for pre-period behaviour and report the reduction in interval width and the effective sample-size gain.</p><a class="nb" href="../labs/D2_2_cuped.ipynb">D2_2_cuped.ipynb</a></div><ul class="checklist"><li>The unadjusted effect and interval <span class="min">4 min</span></li><li>Theta from the pooled pre-period <span class="min">5 min</span></li><li>The adjusted effect and interval <span class="min">6 min</span></li><li>The same with a regression <span class="min">5 min</span></li><li>Variance reduction and effective sample size <span class="min">5 min</span></li><li class="stretch">✱ Stretch: Use 14 pre-period days, the default of one platform, and compare</li></ul></div>
+  <aside class="notes"><p>AI-off for the first attempt: participants compute theta and the adjusted interval themselves, then may ask an assistant to review. Common errors: theta computed per arm, and the covariate not centred (the estimate then shifts by theta times the difference in pre-period means, which is small but visible).</p></aside>
+</section>
+
+<!-- ======================= SESSION 3 ======================= -->
+<section class="slide section" id="s3" data-auto="section" data-session="3" data-n="20">
+  <div class="kicker">Session 3</div>
+  <h1>Ratio metrics</h1>
+  <ul class="bullets outcomes"><li>Explain why a session-level interval is too narrow when customers are randomised</li><li>Compute a delta-method interval for a ratio metric</li><li>Check it with a bootstrap over customers</li></ul>
+  <div class="sess-no">03</div>
+</section>
+
+<section class="slide" id="ratio-metrics" data-lo="LO2" data-label="Ratio metrics" data-n="21" data-session="3">
+  <div class="kicker">Ratio metrics</div>
+  <h2>Orders per session: the numerator and the denominator both vary</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li>Randomised: customers. Counted: sessions and orders.</li>
+      <li>The metric: all orders over all sessions in the arm, a ratio of two sums.</li>
+      <li>Not the mean of each customer's own rate, which weights a one-session customer like a fifty-session one.</li>
+    </ul>
+    <div class="stat"><div class="big">0.2036 vs 0.1964</div><div class="lbl">orders per session, treatment and control: +3.7%</div></div>
+  </div>
+  <aside class="notes"><p>From Lab 2.3: 85,080 triggered customers and 2,807,935 sessions in the test period. Clicks per page view, revenue per order and orders per session are all ratio metrics. The trap is always the same: the unit of analysis is smaller than the unit of randomisation.</p></aside>
+</section>
+
+<section class="slide" id="naive-too-narrow" data-lo="LO2" data-label="The naive interval" data-n="22" data-session="3">
+  <div class="kicker">The trap</div>
+  <h2>Treating sessions as independent makes the interval 2.6 times too narrow</h2>
+  <div class="bars">
+    <div class="row"><span>Naive, sessions as trials</span><div class="bar c-coral" style="--w:38%"></div><span class="val">± 0.0009</span></div>
+    <div class="row"><span>Delta method, by customer</span><div class="bar c-teal" style="--w:100%"></div><span class="val">± 0.0024</span></div>
+  </div>
+  <div class="callout warn mt"><b>Why it matters.</b> An interval 2.6 times too narrow turns noise into wins: the A/A test of Day 1 would show far more than 5% false wins.</div>
+  <aside class="notes"><p>Standard errors from Lab 2.3: naive 0.00048, delta method 0.00124. Sessions of one customer are alike: same habits, same appetite. The binomial formula assumes 2.8 million independent trials when there are 85,080 independent customers.</p></aside>
+</section>
+
+<section class="slide" id="delta-method" data-lo="LO2" data-label="Delta method" data-n="23" data-session="3">
+  <div class="kicker">The delta method</div>
+  <h2>Compute the variance of a ratio from customer-level sums</h2>
+  <pre class="code" data-file="Lab 2.3, step 3"><code class="language-python">o, s = arm.orders, arm.sessions          <span class="hljs-comment"># one row per customer</span>
+r = o.mean() / s.mean()
+c = np.cov(o, s)
+var_r = (c[<span class="hljs-number">0</span>,<span class="hljs-number">0</span>] - <span class="hljs-number">2</span>*r*c[<span class="hljs-number">0</span>,<span class="hljs-number">1</span>] + r**<span class="hljs-number">2</span>*c[<span class="hljs-number">1</span>,<span class="hljs-number">1</span>]) / (n * s.mean()**<span class="hljs-number">2</span>)</code></pre>
+  <ul class="bullets small mt-s">
+    <li>A first-order Taylor expansion of mean(O) / mean(S) around its expectation.</li>
+    <li>Every term is per customer, the unit that was randomised.</li>
+  </ul>
+  <aside class="notes"><p>Deng, Knoblich and Lu (2018) describe the method for metric analytics and its pitfalls (course sources). The formula is per arm; the variance of the difference is the sum of the two. For a relative difference apply the method once more (the stretch).</p></aside>
+</section>
+
+<section class="slide" id="bootstrap-check" data-lo="LO2" data-label="Bootstrap" data-n="24" data-session="3">
+  <div class="kicker">The check</div>
+  <h2>A bootstrap over customers agrees within 4%</h2>
+  <table class="t">
+    <tr><th>Method</th><th class="num">Standard error</th><th class="num">95% interval of the difference</th></tr>
+    <tr><td>Naive, sessions</td><td class="num">0.00048</td><td class="num">+0.0063 to +0.0081</td></tr>
+    <tr class="hl"><td>Delta method</td><td class="num">0.00124</td><td class="num">+0.0048 to +0.0096</td></tr>
+    <tr class="hl"><td>Bootstrap, 1,000 resamples of customers</td><td class="num">0.00120</td><td class="num">+0.0048 to +0.0095</td></tr>
+  </table>
+  <p class="small mt-s">Poisson bootstrap: each customer gets a weight from Poisson(1), all their sessions and orders with it.</p>
+  <aside class="notes"><p>This is LO2's evidence: two agreeing intervals and a note on why the naive one is too narrow. The bootstrap resamples the unit that was randomised; resampling sessions would reproduce the naive interval's mistake.</p></aside>
+</section>
+
+<section class="slide" id="check-ratio" data-lo="LO2" data-n="25" data-session="3">
+  <div class="kicker">Checkpoint</div>
+  <h2>Which interval is right for clicks per view?</h2>
+  <div class="quiz" data-type="single" data-lo="LO2" data-id="check-ratio-q1">
+    <p class="lead">A test randomises customers and reports clicks per page view: 1.9 million views, 80,000 customers. Which standard error should the analysis use?</p>
+    <div class="opts">
+      <div class="opt" data-why="Counts page views as independent trials, ignoring that one customer's views move together" data-k="A">The binomial standard error over 1.9 million views</div>
+      <div class="opt" data-ok data-k="B">A delta-method standard error over the 80,000 customers</div>
+      <div class="opt" data-why="Averages each customer's own rate, which answers a different question and weights light users like heavy ones" data-k="C">The standard error of the mean of each customer's click rate</div>
+      <div class="opt" data-why="Resamples the wrong unit and reproduces the naive error" data-k="D">A bootstrap that resamples page views</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> The variance must be computed over the unit that was randomised; the delta method does that for a ratio of sums.</div>
+  </div>
+  <aside class="notes"><p>Answer: B. If several choose C, show that it changes the estimand, not only the variance.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-2-3" data-auto="lab" data-lab="2.3" data-label="Lab 2.3" data-n="26" data-session="3">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 2.3 · 25 min</div><h2>Orders per session: delta method and bootstrap</h2><p class="lead small">Compute a delta-method interval for orders per session and check it by a bootstrap over customers.</p><a class="nb" href="../labs/D2_3_delta_method.ipynb">D2_3_delta_method.ipynb</a></div><ul class="checklist"><li>Orders per session in each arm <span class="min">3 min</span></li><li>The naive interval, sessions as independent <span class="min">5 min</span></li><li>The delta-method interval <span class="min">7 min</span></li><li>A bootstrap over customers <span class="min">6 min</span></li><li>Two agreeing intervals and why the naive one is narrow <span class="min">4 min</span></li><li class="stretch">✱ Stretch: Compute the interval for the relative difference</li></ul></div>
+  <aside class="notes"><p>AI-off for the first attempt. The bootstrap runs in chunks of 50 resamples to keep memory small; a participant who builds a 1,000 by 42,000 weight matrix at once may run out of memory on a small laptop. Full mode takes under ten seconds.</p></aside>
+</section>
+
+<!-- ======================= SESSION 4 ======================= -->
+<section class="slide section" id="s4" data-auto="section" data-session="4" data-n="27">
+  <div class="kicker">Session 4</div>
+  <h1>Stratification</h1>
+  <ul class="bullets outcomes"><li>Distinguish stratified assignment from post-stratification</li><li>Compute a post-stratified estimate and its standard error</li><li>Judge when strata help and when pre-period data helps more</li></ul>
+  <div class="sess-no">04</div>
+</section>
+
+<section class="slide" id="two-ways-strata" data-lo="LO1" data-label="Two ways" data-n="28" data-session="4">
+  <div class="kicker">Stratification</div>
+  <h2>Use the strata in the design, or in the analysis</h2>
+  <div class="cols cols-2">
+    <div class="card c-teal"><h4>Stratified assignment</h4><p class="small mb0">Randomise 50/50 inside each city. The arms cannot differ in their city mix.</p></div>
+    <div class="card c-cyan"><h4>Post-stratification</h4><p class="small mb0">Randomise simply, then estimate city by city and weight by each city's share.</p></div>
+  </div>
+  <p class="small mt">Both remove the noise that comes from differences between cities. Neither can remove more than the cities explain.</p>
+  <aside class="notes"><p>For large tests the two are nearly equivalent. Stratified assignment matters more for small tests, or when a platform must guarantee balance on a key dimension.</p></aside>
+</section>
+
+<section class="slide" id="post-strat-formula" data-lo="LO1" data-label="The estimator" data-n="29" data-session="4">
+  <div class="kicker">Lab 2.4, step 3</div>
+  <h2>Estimate per city, weight by each city's share</h2>
+  <pre class="code" data-file="post_strat"><code class="language-python">g = d.groupby([<span class="hljs-string">&quot;city&quot;</span>, <span class="hljs-string">&quot;treat&quot;</span>]).orders.agg([<span class="hljs-string">&quot;mean&quot;</span>, <span class="hljs-string">&quot;var&quot;</span>, <span class="hljs-string">&quot;size&quot;</span>]).unstack(<span class="hljs-string">&quot;treat&quot;</span>)
+w = (g[<span class="hljs-string">&quot;size&quot;</span>][<span class="hljs-number">0</span>] + g[<span class="hljs-string">&quot;size&quot;</span>][<span class="hljs-number">1</span>]) / <span class="hljs-built_in">len</span>(d)
+est = (w * (g[<span class="hljs-string">&quot;mean&quot;</span>][<span class="hljs-number">1</span>] - g[<span class="hljs-string">&quot;mean&quot;</span>][<span class="hljs-number">0</span>])).<span class="hljs-built_in">sum</span>()
+se = sqrt((w**<span class="hljs-number">2</span> * (g[<span class="hljs-string">&quot;var&quot;</span>][<span class="hljs-number">1</span>]/g[<span class="hljs-string">&quot;size&quot;</span>][<span class="hljs-number">1</span>] + g[<span class="hljs-string">&quot;var&quot;</span>][<span class="hljs-number">0</span>]/g[<span class="hljs-string">&quot;size&quot;</span>][<span class="hljs-number">0</span>])).<span class="hljs-built_in">sum</span>())</code></pre>
+  <aside class="notes"><p>Walk through the four lines. The weights are each city's share of all triggered customers, so the estimate averages over the same population as the simple difference.</p></aside>
+</section>
+
+<section class="slide" id="cities-differ" data-lo="LO1" data-label="Cities" data-n="30" data-session="4">
+  <div class="kicker">Lab 2.4, step 1</div>
+  <h2>Cities differ in their means, and explain 1.2% of the variance</h2>
+  <div class="bars">
+    <div class="row"><span>Riyadh</span><div class="bar c-teal" style="--w:100%"></div><span class="val">7.36</span></div>
+    <div class="row"><span>Jeddah</span><div class="bar c-teal" style="--w:94%"></div><span class="val">6.90</span></div>
+    <div class="row"><span>Dammam</span><div class="bar c-teal" style="--w:87%"></div><span class="val">6.39</span></div>
+    <div class="row"><span>Makkah</span><div class="bar c-teal" style="--w:80%"></div><span class="val">5.87</span></div>
+    <div class="row"><span>Madinah</span><div class="bar c-teal" style="--w:76%"></div><span class="val">5.63</span></div>
+    <div class="row"><span>Abha</span><div class="bar c-teal" style="--w:69%"></div><span class="val">5.09</span></div>
+  </div>
+  <p class="small mt-s">Orders per triggered customer in the test period. The spread inside each city (standard deviations of 5 to 7.4) dwarfs the spread between them.</p>
+  <aside class="notes"><p>A 45% difference between Riyadh and Abha looks large, and still explains only 1.2% of the variance, because customers within a city differ far more than the cities do.</p></aside>
+</section>
+
+<section class="slide" id="strata-result" data-lo="LO1" data-label="What it buys" data-n="31" data-session="4">
+  <div class="kicker">Lab 2.4, full mode</div>
+  <h2>City strata buy almost nothing; pre-period strata buy a lot</h2>
+  <table class="t">
+    <tr><th>Estimator, orders per triggered customer</th><th class="num">Estimate</th><th class="num">Standard error</th></tr>
+    <tr><td>Simple difference</td><td class="num">+0.253</td><td class="num">0.046</td></tr>
+    <tr><td>Post-stratified by city</td><td class="num">+0.258</td><td class="num">0.046</td></tr>
+    <tr class="hl"><td>Post-stratified by pre-period deciles</td><td class="num">+0.227</td><td class="num">0.028</td></tr>
+    <tr class="hl"><td>CUPED, pre-period orders (Lab 2.2)</td><td class="num">+0.226</td><td class="num">0.024</td></tr>
+  </table>
+  <p class="small mt-s">On a 3,000-customer pilot repeated 1,000 times, city post-stratification cut the variance by 1.3%.</p>
+  <aside class="notes"><p>The decile row is the lab's stretch, computed on the same data. The honest finding: for Sufrah, city strata matter for reporting per city, not for precision. Strata on a strong predictor behave like a coarse regression adjustment.</p></aside>
+</section>
+
+<section class="slide" id="check-strata" data-lo="LO1" data-n="32" data-session="4">
+  <div class="kicker">Checkpoint</div>
+  <h2>When does stratifying by city pay off?</h2>
+  <div class="quiz" data-type="single" data-lo="LO1" data-id="check-strata-q1">
+    <p class="lead">Sufrah plans a 2,000-customer pilot in two cities whose customers order at very different rates. Which design reduces the variance of the estimate most?</p>
+    <div class="opts">
+      <div class="opt" data-why="Thinks a simple randomisation always balances, which is only true on average and fails most in small samples" data-k="A">A simple 50/50 randomisation, analysed as a simple difference</div>
+      <div class="opt" data-why="Believes more strata are always better; tiny strata give noisy means and unstable variances" data-k="B">Strata for every district, analysed per district</div>
+      <div class="opt" data-ok data-k="C">Randomisation within each city, analysed with the city strata</div>
+      <div class="opt" data-why="Confuses reporting results per city with estimating the overall effect more precisely" data-k="D">A separate test in each city, reported side by side</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> When the strata explain much of the variance and the test is small, randomising within strata prevents imbalance and removes the between-strata noise.</div>
+  </div>
+  <aside class="notes"><p>Answer: C. Contrast with T-101: 85,000 customers in six cities that explain 1.2% of the variance, where strata change nothing.</p></aside>
+</section>
+
+<section class="slide lab top" id="lab-2-4" data-auto="lab" data-lab="2.4" data-label="Lab 2.4" data-n="33" data-session="4">
+  <div class="cols cols-2 mid"><div><div class="lab-tag">Lab 2.4 · 25 min</div><h2>City strata in the search test</h2><p class="lead small">Estimate a city-stratified test with and without post-stratification, on the full test and on a small pilot.</p><a class="nb" href="../labs/D2_4_stratification.ipynb">D2_4_stratification.ipynb</a></div><ul class="checklist"><li>Orders by city: how much the cities differ <span class="min">4 min</span></li><li>The simple difference and its standard error <span class="min">4 min</span></li><li>The post-stratified estimate and standard error <span class="min">7 min</span></li><li>A 3,000-customer pilot, 1,000 times <span class="min">6 min</span></li><li>When strata help: write two sentences <span class="min">4 min</span></li><li class="stretch">✱ Stretch: Stratify on deciles of pre-period orders and compare with Lab 2.2</li></ul></div>
+  <aside class="notes"><p>AI-off for the first attempt. The pilot loop takes about ten seconds in full mode. Common error: weights from the treatment arm only. The stretch, pre-period deciles, connects to Lab 2.2.</p></aside>
+</section>
+
+<section class="slide" id="wrap-up" data-label="Wrap-up" data-n="34" data-session="4">
+  <div class="kicker">Day 2</div>
+  <h2>Three things to keep</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>Cap, and say so</h4><p class="small mb0">A pooled cap trades a small, stated bias for less noise.</p></div>
+    <div class="card c-cyan"><h4>Use the pre-period</h4><p class="small mb0">Regression adjustment halved T-101's interval: 3.7 times the customers for free.</p></div>
+    <div class="card c-coral"><h4>Respect the unit</h4><p class="small mb0">Compute every interval over the unit that was randomised.</p></div>
+  </div>
+  <aside class="notes"><p>Ask for one metric in each participant's work that is a ratio metric, and how its interval is computed today.</p></aside>
+</section>
+
+<section class="slide dark" id="next" data-label="Next" data-n="35" data-session="4">
+  <div class="kicker">Day 3</div>
+  <h2>Next: watching tests every day, and tests where customers share couriers</h2>
+  <ul class="bullets">
+    <li>Why daily peeking invents wins, and two ways to look safely</li>
+    <li>A dispatch test whose customer-randomised result is mostly stealing</li>
+    <li>City-by-hour switchbacks and their power</li>
+  </ul>
+  <aside class="notes"><p>Nothing to prepare. Day 3 uses two simulators in sufrah.py; no data from today is needed.</p></aside>
+</section>
+</div>
+<script type="application/json" id="academy-data">{"v":1,"engine":"1.0.0","build":{"at":"2026-11-15T03:19:28Z","version":"2027.1.0","commit":"843acec"},"course":{"id":"ds-302","code":"DS-302","title":"Online Experiments and A/B Testing","track":"data-science","lang":"en","dir":"ltr","url":"https://sdaiaacademy.github.io/ds-302/","repo":"SDAIAAcademy/ds-302","home":"../index.html"},"deck":{"id":"day2","kind":"day","day":2,"label":"Day 2","title":"Precision","prev":"day1.html","next":"day3.html","md":"day2.md","alt":{}},"sessions":[{"n":1,"label":"Session 1","title":"Variance and heavy tails","slide":"s1","outcomes":["Measure how a few large orders drive the variance of revenue per customer","Cap a metric at a percentile of the pooled data","Report the bias and the variance a cap trades"],"minutes":50,"lab":{"id":"2.1","title":"Capping order value","minutes":25,"href":"../labs/D2_1_capping.ipynb"}},{"n":2,"label":"Session 2","title":"Regression adjustment","slide":"s2","outcomes":["Estimate the CUPED coefficient from pre-period data","Compute adjusted and unadjusted intervals","Report the variance reduction as an effective sample-size gain"],"minutes":50,"lab":{"id":"2.2","title":"Regression adjustment with 28 pre-period days","minutes":25,"href":"../labs/D2_2_cuped.ipynb"}},{"n":3,"label":"Session 3","title":"Ratio metrics","slide":"s3","outcomes":["Explain why a session-level interval is too narrow when customers are randomised","Compute a delta-method interval for a ratio metric","Check it with a bootstrap over customers"],"minutes":50,"lab":{"id":"2.3","title":"Orders per session: delta method and bootstrap","minutes":25,"href":"../labs/D2_3_delta_method.ipynb"}},{"n":4,"label":"Session 4","title":"Stratification","slide":"s4","outcomes":["Distinguish stratified assignment from post-stratification","Compute a post-stratified estimate and its standard error","Judge when strata help and when pre-period data helps more"],"minutes":50,"lab":{"id":"2.4","title":"City strata in the search test","minutes":25,"href":"../labs/D2_4_stratification.ipynb"}}],"slides":[{"id":"title","n":1,"title":"Precision","kind":"title","session":0,"hash":"f01ab334","md":"#### [day2#title] Precision\n\n*SDAIA Academy · Online Experiments and A/B Testing*\n\nDay 2: The same test, a narrower interval: capping, pre-period data, ratio metrics and strata\n\nData Science Track · 4 teaching days + capstone day · 4 sessions · 4 labs · DS-302","notes":"Open with yesterday's number: T-101's triggered effect on orders was +0.253 with an interval from +0.163 to +0.343. Today the same data gives an interval half as wide, without a single extra customer. Ask the room to guess how.","minutes":null,"lo":[]},{"id":"agenda","n":2,"title":"Precision","kind":"content","session":0,"hash":"c19f1003","md":"#### [day2#agenda] Precision\n\n*Today*\n\n- **Session 1 · Variance and heavy tails**: Group orders make revenue noisy; capping cuts the variance and changes what is estimated\n- **Session 2 · Regression adjustment**: Pre-period behaviour predicts test behaviour; removing what it predicts narrows the interval\n- **Session 3 · Ratio metrics**: Orders per session is a ratio of two sums per customer; its interval must respect the randomisation unit\n- **Session 4 · Stratification**: Cities differ; using that in design or analysis removes between-city noise, sometimes by little","notes":"Four ways to a narrower interval or a correct one: capping the tail, pre-period data, intervals for ratio metrics that respect the randomisation unit, and strata. All on the T-101 stream.","minutes":null,"lo":[]},{"id":"review-day1","n":3,"title":"Which check comes first?","kind":"quiz","session":0,"hash":"ed3c1e91","md":"#### [day2#review-day1] Which check comes first?\n\n*Review of Day 1*\n\n**Question:** Ruba receives the results of a 28-day test with a 4% lift on the primary metric, all guardrails green. Which check does she run before reading any of it?\n\n- A. Regression adjustment, to narrow the interval\n- B. A false discovery correction over the segments\n- C. The sample ratio check on the assignment counts\n- D. A power calculation for the observed effect","notes":"Answer: C. Ask one participant to say where they would look if it failed (platform, build, day). Two minutes, then move on.","minutes":null,"lo":["LO6"]},{"id":"s1","n":4,"title":"Variance and heavy tails","kind":"section","session":1,"hash":"9ddeae20","md":"#### [day2#s1] Variance and heavy tails\n\n*Session 1*\n\n- Measure how a few large orders drive the variance of revenue per customer\n- Cap a metric at a percentile of the pooled data\n- Report the bias and the variance a cap trades","notes":"","minutes":null,"lo":["LO1"]},{"id":"variance-sources","n":5,"title":"One customer in a hundred carries half the variance of revenue","kind":"content","session":1,"hash":"a8bd1e93","md":"#### [day2#variance-sources] One customer in a hundred carries half the variance of revenue\n\n*Lab 2.1, step 1*\n\n- **753** SAR, standard deviation of revenue per triggered customer\n- **536** SAR, the same without the top 1% of customers\n- **49%** of the variance from that top 1%\n\n85,080 triggered customers, 561,609 test-period orders. About one order in a hundred is a group order worth many baskets.","notes":"Numbers from the solution run of Lab 2.1, full mode. The variance of a mean is the variance of the metric over n: half the variance in a few customers means half the width of the interval decided by who placed a catering order this month.","minutes":null,"lo":["LO1"]},{"id":"capping-rule","n":6,"title":"Count each order up to a cap set from both arms pooled","kind":"content","session":1,"hash":"2f5d9a15","md":"#### [day2#capping-rule] Count each order up to a cap set from both arms pooled\n\n*Capping, also called winsorising*\n\n```python\n# file: Lab 2.1\ncap = orders.value.quantile(0.99)   # pooled\nv = orders.value.clip(upper=cap)\nrevenue = v.groupby(orders.customer_id).sum()\n```\n\n| Cap | SAR |\n| --- | --- |\n| 99.9th percentile | 1,402 |\n| 99th percentile | 337 |\n| 95th percentile | 184 |\n\n> **Never set the cap per arm.** A cap that depends on the treatment can create a difference on its own.","notes":"Cap percentiles are from the pooled test-period orders of triggered customers. In a real programme the cap is fixed in the pre-registration, from historical data, before the test starts. Ask: what does a cap at the 99th percentile mean for a customer who places one SAR 2,000 catering order? It counts as SAR 337.","minutes":null,"lo":["LO1"]},{"id":"cap-changes-estimand","n":7,"title":"A capped metric estimates a different, smaller effect","kind":"content","session":1,"hash":"b29c47f3","md":"#### [day2#cap-changes-estimand] A capped metric estimates a different, smaller effect\n\n*The price of a cap*\n\n- The ranking adds orders, some of them group orders.\n- Capped, those orders count for less: the effect on the capped metric is smaller than on revenue.\n- That gap is a **bias** if the decision is about revenue.\n\n- **Only in synthetic data.** The generator knows every customer's orders under both arms, so the true effect of each cap is exact. No real test can measure this bias; a simulation can.","notes":"This is why the course uses synthetic data: the potential outcomes (_potential in the stream) let you compute the true uncapped effect, 17.91 SAR per triggered customer, and the true effect under each cap. In practice you estimate the bias the same way, by simulating on historical data.","minutes":null,"lo":["LO1"]},{"id":"cap-tradeoff","n":8,"title":"The 99th-percentile cap gives the smallest total error","kind":"content","session":1,"hash":"4fc85df4","md":"#### [day2#cap-tradeoff] The 99th-percentile cap gives the smallest total error\n\n*Lab 2.1, full mode*\n\n| Cap | Estimate | Standard error | True effect | Bias against uncapped | Root mean square error |\n| --- | --- | --- | --- | --- | --- |\n| none | 20.13 | 5.16 | 17.91 | 0 | 5.16 |\n| 99.9th | 19.71 | 4.34 | 17.37 | -0.54 | 4.37 |\n| 99th | 19.11 | 4.02 | 16.70 | -1.21 | 4.20 |\n| 95th | 17.92 | 3.72 | 15.91 | -1.99 | 4.23 |\n\nSAR per triggered customer over 28 days.","notes":"Read the columns in order: the standard error falls as the cap tightens, the bias grows, and the root mean square error (bias and noise together) bottoms out at the 99th percentile. The 95th is close behind; with a smaller test the noise would dominate and a tighter cap would win. Note the uncapped estimate, 20.13, against the truth, 17.91: one test's noise is larger than any cap's bias.","minutes":null,"lo":["LO1"]},{"id":"cap-reporting","n":9,"title":"Pre-register the cap, report the uncapped result beside it","kind":"content","session":1,"hash":"e6af718e","md":"#### [day2#cap-reporting] Pre-register the cap, report the uncapped result beside it\n\n*Writing it down*\n\n1. The percentile and the data it comes from: pooled, before the test.\n2. What the metric now means: revenue with each order counted up to SAR 337.\n3. The uncapped estimate in the appendix, so nobody wonders what was hidden.\n\n> **Capping is not deleting.** The large orders stay in the data; they just stop deciding the interval.","notes":"Deleting outliers changes the population; capping keeps every customer and limits each order's influence. Ask the room whether their own dashboards cap, and at what. Many platforms offer a percentile cap as a metric setting; check the documentation of the one you use.","minutes":null,"lo":["LO1"]},{"id":"check-capping","n":10,"title":"Where does the cap come from?","kind":"quiz","session":1,"hash":"26ca7a40","md":"#### [day2#check-capping] Where does the cap come from?\n\n*Checkpoint*\n\n**Question:** Ruba wants to cap order value at the 99th percentile for T-101's revenue metric. Which data should set the cap?\n\n- A. Order values from both arms pooled, or from history before the test\n- B. Order values of the control arm only\n- C. Each arm's own 99th percentile\n- D. Whichever cap gives the smallest p-value","notes":"Answer: A. Option D happens more often than people admit; call it what it is, a forking path.","minutes":null,"lo":["LO1"]},{"id":"lab-2-1","n":11,"title":"Capping order value","kind":"lab","session":1,"hash":"d04df08d","md":"#### [day2#lab-2-1] Capping order value\n\nLab 2.1 · 25 min\n\nMeasure how capping order value changes variance and bias, using the potential outcomes the generator knows.\n\n[D2_1_capping.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D2_1_capping.ipynb)\n\n- [ ] Where the variance of revenue comes from (5 min)\n- [ ] Cap at the pooled 99th and 99.9th percentiles (5 min)\n- [ ] Effect and standard error under each cap (6 min)\n- [ ] Bias against the true uncapped effect (5 min)\n- [ ] Choose a cap and write the reason (4 min)\n- [ ] ✱ Stretch: Cap per customer instead of per order and compare","notes":"AI-tutor lab. Watch for customers with no order dropped from the revenue Series (the reindex with fill_value=0 is the fix) and for caps computed per arm. Full mode runs in a few seconds.","minutes":null,"lo":[]},{"id":"s2","n":12,"title":"Regression adjustment","kind":"section","session":2,"hash":"e13e855e","md":"#### [day2#s2] Regression adjustment\n\n*Session 2*\n\n- Estimate the CUPED coefficient from pre-period data\n- Compute adjusted and unadjusted intervals\n- Report the variance reduction as an effective sample-size gain","notes":"","minutes":null,"lo":["LO1"]},{"id":"habits-persist","n":13,"title":"Last month's orders predict this month's, whatever the arm","kind":"content","session":2,"hash":"126b75ca","md":"#### [day2#habits-persist] Last month's orders predict this month's, whatever the arm\n\n*The idea*\n\n**0.85** correlation between orders in the 28 pre-period days and the 28 test days, triggered customers\n\n- Most of the variance between customers is habit, and habit was there before the test.\n- Remove what the pre-period predicts and the remaining noise is small.\n- The pre-period cannot carry the effect: it ended before assignment.","notes":"Correlation from Lab 2.2, full mode. For revenue the correlation is lower, 0.59, because group orders are not habits. Ask what a correlation of zero would mean: nothing to gain.","minutes":null,"lo":["LO1"]},{"id":"cuped-formula","n":14,"title":"Subtract theta times the centred pre-period metric","kind":"content","session":2,"hash":"f082be38","md":"#### [day2#cuped-formula] Subtract theta times the centred pre-period metric\n\n*CUPED*\n\n```python\n# file: Lab 2.2\ntheta = cov(y, x) / var(x)       # both arms pooled\ny_cuped = y - theta * (x - x.mean())\ndiff_ci(y_cuped, t)\n```\n\n- Same expected difference: the term has mean zero in each arm.\n- Variance multiplied by 1 - rho²: here 0.27.\n- theta = 0.864 for orders in T-101.","notes":"The method was published by Deng, Xu, Kohavi and Walker (2013) under the name CUPED. GrowthBook's documentation describes the same estimator, with theta from a regression of post-exposure on pre-exposure data pooled across the variations, and 14 days of pre-exposure data by default. Sources: the CUPED paper and GrowthBook's CUPED page (course sources).","minutes":null,"lo":["LO1"]},{"id":"cuped-result","n":15,"title":"The interval halves; the estimate stays compatible","kind":"content","session":2,"hash":"492abfff","md":"#### [day2#cuped-result] The interval halves; the estimate stays compatible\n\n*Lab 2.2, full mode*\n\n| Orders per triggered customer | Difference | Standard error | 95% interval |\n| --- | --- | --- | --- |\n| Unadjusted | +0.253 | 0.046 | +0.163 to +0.343 |\n| Adjusted (CUPED) | +0.226 | 0.024 | +0.179 to +0.273 |\n\n- **73%** less variance\n- **3.7×** the customers an unadjusted test would need for the same precision","notes":"This is LO1's evidence: unadjusted and adjusted intervals with the effective sample-size gain. The estimate moved from 0.253 to 0.226 because the treatment arm happened to have slightly heavier orderers before the test (6.449 against 6.418 orders); the adjustment corrects that chance imbalance. Both are estimates of the same effect.","minutes":null,"lo":["LO1"]},{"id":"cuped-regression","n":16,"title":"Regression adjustment gives the same number to four decimals","kind":"content","session":2,"hash":"be724c36","md":"#### [day2#cuped-regression] Regression adjustment gives the same number to four decimals\n\n*The same thing, as a regression*\n\n```python\n# file: Lab 2.2, step 4\nd = df.assign(xc=df.orders_pre - df.orders_pre.mean())\nfit = smf.ols(\"orders ~ treat + xc\", data=d).fit(cov_type=\"HC2\")\nfit.params[\"treat\"], fit.bse[\"treat\"]    # 0.2261, 0.0241\n```\n\n- The regression form extends to several covariates: pre-period orders, revenue, city.\n- Use robust standard errors; centre the covariate so the treatment coefficient is the average effect.","notes":"With one covariate and theta pooled, CUPED and the regression with a common slope are the same estimator. With many covariates, keep them few and measured before assignment; a covariate measured after assignment can carry part of the effect.","minutes":null,"lo":["LO1"]},{"id":"effective-n","n":17,"title":"Report the gain as customers: it is what the business buys","kind":"content","session":2,"hash":"3a3e3e39","md":"#### [day2#effective-n] Report the gain as customers: it is what the business buys\n\n*Reporting the saving*\n\n| Item | Value |\n| --- | --- |\n| Orders, 28 pre-period days | 3.7× the customers |\n| Revenue, 28 pre-period days | about 1.5× |\n\nGain = 1 / (1 - rho²). Orders: rho = 0.85. Revenue: rho = 0.59, so 1 / (1 - 0.34) ≈ 1.5.\n\n> **For T-101**: a revenue test that needed 55 days on Day 1 needs far fewer with capping and adjustment together.","notes":"The revenue gain is computed from the correlation printed in the lab's look-at step (0.586). Capping first raises it, because the uncorrelated group orders lose weight. The stretch compares 14 and 28 pre-period days.","minutes":null,"lo":["LO1"]},{"id":"check-cuped","n":18,"title":"What can go into the adjustment?","kind":"quiz","session":2,"hash":"f8a343d3","md":"#### [day2#check-cuped] What can go into the adjustment?\n\n*Checkpoint*\n\n**Question:** Ruba wants a stronger adjustment for T-101 and considers adding one more covariate to the regression. Which one is safe?\n\n- A. Number of searches during the test\n- B. Revenue during the test\n- C. Day of the first search in the test\n- D. Revenue in the 28 pre-period days","notes":"Answer: D. Option C is subtle: in T-101 the first search is not affected by the ranking, but the rule \"before assignment\" is the one to remember.","minutes":null,"lo":["LO1"]},{"id":"lab-2-2","n":19,"title":"Regression adjustment with 28 pre-period days","kind":"lab","session":2,"hash":"d8003c3d","md":"#### [day2#lab-2-2] Regression adjustment with 28 pre-period days\n\nLab 2.2 · 25 min\n\nAdjust for pre-period behaviour and report the reduction in interval width and the effective sample-size gain.\n\n[D2_2_cuped.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D2_2_cuped.ipynb)\n\n- [ ] The unadjusted effect and interval (4 min)\n- [ ] Theta from the pooled pre-period (5 min)\n- [ ] The adjusted effect and interval (6 min)\n- [ ] The same with a regression (5 min)\n- [ ] Variance reduction and effective sample size (5 min)\n- [ ] ✱ Stretch: Use 14 pre-period days, the default of one platform, and compare","notes":"AI-off for the first attempt: participants compute theta and the adjusted interval themselves, then may ask an assistant to review. Common errors: theta computed per arm, and the covariate not centred (the estimate then shifts by theta times the difference in pre-period means, which is small but visible).","minutes":null,"lo":[]},{"id":"s3","n":20,"title":"Ratio metrics","kind":"section","session":3,"hash":"832f4e42","md":"#### [day2#s3] Ratio metrics\n\n*Session 3*\n\n- Explain why a session-level interval is too narrow when customers are randomised\n- Compute a delta-method interval for a ratio metric\n- Check it with a bootstrap over customers","notes":"","minutes":null,"lo":["LO2"]},{"id":"ratio-metrics","n":21,"title":"Orders per session: the numerator and the denominator both vary","kind":"content","session":3,"hash":"c6d906e0","md":"#### [day2#ratio-metrics] Orders per session: the numerator and the denominator both vary\n\n*Ratio metrics*\n\n- Randomised: customers. Counted: sessions and orders.\n- The metric: all orders over all sessions in the arm, a ratio of two sums.\n- Not the mean of each customer's own rate, which weights a one-session customer like a fifty-session one.\n\n**0.2036 vs 0.1964** orders per session, treatment and control: +3.7%","notes":"From Lab 2.3: 85,080 triggered customers and 2,807,935 sessions in the test period. Clicks per page view, revenue per order and orders per session are all ratio metrics. The trap is always the same: the unit of analysis is smaller than the unit of randomisation.","minutes":null,"lo":["LO2"]},{"id":"naive-too-narrow","n":22,"title":"Treating sessions as independent makes the interval 2.6 times too narrow","kind":"content","session":3,"hash":"ec3a8752","md":"#### [day2#naive-too-narrow] Treating sessions as independent makes the interval 2.6 times too narrow\n\n*The trap*\n\n| Item | Value |\n| --- | --- |\n| Naive, sessions as trials | ± 0.0009 |\n| Delta method, by customer | ± 0.0024 |\n\n> **Why it matters.** An interval 2.6 times too narrow turns noise into wins: the A/A test of Day 1 would show far more than 5% false wins.","notes":"Standard errors from Lab 2.3: naive 0.00048, delta method 0.00124. Sessions of one customer are alike: same habits, same appetite. The binomial formula assumes 2.8 million independent trials when there are 85,080 independent customers.","minutes":null,"lo":["LO2"]},{"id":"delta-method","n":23,"title":"Compute the variance of a ratio from customer-level sums","kind":"content","session":3,"hash":"25856067","md":"#### [day2#delta-method] Compute the variance of a ratio from customer-level sums\n\n*The delta method*\n\n```python\n# file: Lab 2.3, step 3\no, s = arm.orders, arm.sessions          # one row per customer\nr = o.mean() / s.mean()\nc = np.cov(o, s)\nvar_r = (c[0,0] - 2*r*c[0,1] + r**2*c[1,1]) / (n * s.mean()**2)\n```\n\n- A first-order Taylor expansion of mean(O) / mean(S) around its expectation.\n- Every term is per customer, the unit that was randomised.","notes":"Deng, Knoblich and Lu (2018) describe the method for metric analytics and its pitfalls (course sources). The formula is per arm; the variance of the difference is the sum of the two. For a relative difference apply the method once more (the stretch).","minutes":null,"lo":["LO2"]},{"id":"bootstrap-check","n":24,"title":"A bootstrap over customers agrees within 4%","kind":"content","session":3,"hash":"b0529c22","md":"#### [day2#bootstrap-check] A bootstrap over customers agrees within 4%\n\n*The check*\n\n| Method | Standard error | 95% interval of the difference |\n| --- | --- | --- |\n| Naive, sessions | 0.00048 | +0.0063 to +0.0081 |\n| Delta method | 0.00124 | +0.0048 to +0.0096 |\n| Bootstrap, 1,000 resamples of customers | 0.00120 | +0.0048 to +0.0095 |\n\nPoisson bootstrap: each customer gets a weight from Poisson(1), all their sessions and orders with it.","notes":"This is LO2's evidence: two agreeing intervals and a note on why the naive one is too narrow. The bootstrap resamples the unit that was randomised; resampling sessions would reproduce the naive interval's mistake.","minutes":null,"lo":["LO2"]},{"id":"check-ratio","n":25,"title":"Which interval is right for clicks per view?","kind":"quiz","session":3,"hash":"323321be","md":"#### [day2#check-ratio] Which interval is right for clicks per view?\n\n*Checkpoint*\n\n**Question:** A test randomises customers and reports clicks per page view: 1.9 million views, 80,000 customers. Which standard error should the analysis use?\n\n- A. The binomial standard error over 1.9 million views\n- B. A delta-method standard error over the 80,000 customers\n- C. The standard error of the mean of each customer's click rate\n- D. A bootstrap that resamples page views","notes":"Answer: B. If several choose C, show that it changes the estimand, not only the variance.","minutes":null,"lo":["LO2"]},{"id":"lab-2-3","n":26,"title":"Orders per session: delta method and bootstrap","kind":"lab","session":3,"hash":"93d95f70","md":"#### [day2#lab-2-3] Orders per session: delta method and bootstrap\n\nLab 2.3 · 25 min\n\nCompute a delta-method interval for orders per session and check it by a bootstrap over customers.\n\n[D2_3_delta_method.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D2_3_delta_method.ipynb)\n\n- [ ] Orders per session in each arm (3 min)\n- [ ] The naive interval, sessions as independent (5 min)\n- [ ] The delta-method interval (7 min)\n- [ ] A bootstrap over customers (6 min)\n- [ ] Two agreeing intervals and why the naive one is narrow (4 min)\n- [ ] ✱ Stretch: Compute the interval for the relative difference","notes":"AI-off for the first attempt. The bootstrap runs in chunks of 50 resamples to keep memory small; a participant who builds a 1,000 by 42,000 weight matrix at once may run out of memory on a small laptop. Full mode takes under ten seconds.","minutes":null,"lo":[]},{"id":"s4","n":27,"title":"Stratification","kind":"section","session":4,"hash":"7620925d","md":"#### [day2#s4] Stratification\n\n*Session 4*\n\n- Distinguish stratified assignment from post-stratification\n- Compute a post-stratified estimate and its standard error\n- Judge when strata help and when pre-period data helps more","notes":"","minutes":null,"lo":["LO1"]},{"id":"two-ways-strata","n":28,"title":"Use the strata in the design, or in the analysis","kind":"content","session":4,"hash":"e056dec6","md":"#### [day2#two-ways-strata] Use the strata in the design, or in the analysis\n\n*Stratification*\n\n- **Stratified assignment.** Randomise 50/50 inside each city. The arms cannot differ in their city mix.\n- **Post-stratification.** Randomise simply, then estimate city by city and weight by each city's share.\n\nBoth remove the noise that comes from differences between cities. Neither can remove more than the cities explain.","notes":"For large tests the two are nearly equivalent. Stratified assignment matters more for small tests, or when a platform must guarantee balance on a key dimension.","minutes":null,"lo":["LO1"]},{"id":"post-strat-formula","n":29,"title":"Estimate per city, weight by each city's share","kind":"content","session":4,"hash":"25b681df","md":"#### [day2#post-strat-formula] Estimate per city, weight by each city's share\n\n*Lab 2.4, step 3*\n\n```python\n# file: post_strat\ng = d.groupby([\"city\", \"treat\"]).orders.agg([\"mean\", \"var\", \"size\"]).unstack(\"treat\")\nw = (g[\"size\"][0] + g[\"size\"][1]) / len(d)\nest = (w * (g[\"mean\"][1] - g[\"mean\"][0])).sum()\nse = sqrt((w**2 * (g[\"var\"][1]/g[\"size\"][1] + g[\"var\"][0]/g[\"size\"][0])).sum())\n```","notes":"Walk through the four lines. The weights are each city's share of all triggered customers, so the estimate averages over the same population as the simple difference.","minutes":null,"lo":["LO1"]},{"id":"cities-differ","n":30,"title":"Cities differ in their means, and explain 1.2% of the variance","kind":"content","session":4,"hash":"d1d37899","md":"#### [day2#cities-differ] Cities differ in their means, and explain 1.2% of the variance\n\n*Lab 2.4, step 1*\n\n| Item | Value |\n| --- | --- |\n| Riyadh | 7.36 |\n| Jeddah | 6.90 |\n| Dammam | 6.39 |\n| Makkah | 5.87 |\n| Madinah | 5.63 |\n| Abha | 5.09 |\n\nOrders per triggered customer in the test period. The spread inside each city (standard deviations of 5 to 7.4) dwarfs the spread between them.","notes":"A 45% difference between Riyadh and Abha looks large, and still explains only 1.2% of the variance, because customers within a city differ far more than the cities do.","minutes":null,"lo":["LO1"]},{"id":"strata-result","n":31,"title":"City strata buy almost nothing; pre-period strata buy a lot","kind":"content","session":4,"hash":"a77b73c6","md":"#### [day2#strata-result] City strata buy almost nothing; pre-period strata buy a lot\n\n*Lab 2.4, full mode*\n\n| Estimator, orders per triggered customer | Estimate | Standard error |\n| --- | --- | --- |\n| Simple difference | +0.253 | 0.046 |\n| Post-stratified by city | +0.258 | 0.046 |\n| Post-stratified by pre-period deciles | +0.227 | 0.028 |\n| CUPED, pre-period orders (Lab 2.2) | +0.226 | 0.024 |\n\nOn a 3,000-customer pilot repeated 1,000 times, city post-stratification cut the variance by 1.3%.","notes":"The decile row is the lab's stretch, computed on the same data. The honest finding: for Sufrah, city strata matter for reporting per city, not for precision. Strata on a strong predictor behave like a coarse regression adjustment.","minutes":null,"lo":["LO1"]},{"id":"check-strata","n":32,"title":"When does stratifying by city pay off?","kind":"quiz","session":4,"hash":"66f921ca","md":"#### [day2#check-strata] When does stratifying by city pay off?\n\n*Checkpoint*\n\n**Question:** Sufrah plans a 2,000-customer pilot in two cities whose customers order at very different rates. Which design reduces the variance of the estimate most?\n\n- A. A simple 50/50 randomisation, analysed as a simple difference\n- B. Strata for every district, analysed per district\n- C. Randomisation within each city, analysed with the city strata\n- D. A separate test in each city, reported side by side","notes":"Answer: C. Contrast with T-101: 85,000 customers in six cities that explain 1.2% of the variance, where strata change nothing.","minutes":null,"lo":["LO1"]},{"id":"lab-2-4","n":33,"title":"City strata in the search test","kind":"lab","session":4,"hash":"dbeb4460","md":"#### [day2#lab-2-4] City strata in the search test\n\nLab 2.4 · 25 min\n\nEstimate a city-stratified test with and without post-stratification, on the full test and on a small pilot.\n\n[D2_4_stratification.ipynb](https://sdaiaacademy.github.io/ds-302/labs/D2_4_stratification.ipynb)\n\n- [ ] Orders by city: how much the cities differ (4 min)\n- [ ] The simple difference and its standard error (4 min)\n- [ ] The post-stratified estimate and standard error (7 min)\n- [ ] A 3,000-customer pilot, 1,000 times (6 min)\n- [ ] When strata help: write two sentences (4 min)\n- [ ] ✱ Stretch: Stratify on deciles of pre-period orders and compare with Lab 2.2","notes":"AI-off for the first attempt. The pilot loop takes about ten seconds in full mode. Common error: weights from the treatment arm only. The stretch, pre-period deciles, connects to Lab 2.2.","minutes":null,"lo":[]},{"id":"wrap-up","n":34,"title":"Three things to keep","kind":"content","session":4,"hash":"84c69e94","md":"#### [day2#wrap-up] Three things to keep\n\n*Day 2*\n\n- **Cap, and say so.** A pooled cap trades a small, stated bias for less noise.\n- **Use the pre-period.** Regression adjustment halved T-101's interval: 3.7 times the customers for free.\n- **Respect the unit.** Compute every interval over the unit that was randomised.","notes":"Ask for one metric in each participant's work that is a ratio metric, and how its interval is computed today.","minutes":null,"lo":[]},{"id":"next","n":35,"title":"Next: watching tests every day, and tests where customers share couriers","kind":"content","session":4,"hash":"1c7c9418","md":"#### [day2#next] Next: watching tests every day, and tests where customers share couriers\n\n*Day 3*\n\n- Why daily peeking invents wins, and two ways to look safely\n- A dispatch test whose customer-randomised result is mostly stealing\n- City-by-hour switchbacks and their power","notes":"Nothing to prepare. Day 3 uses two simulators in sufrah.py; no data from today is needed.","minutes":null,"lo":[]}],"activities":[{"id":"review-day1-q1","slide":"review-day1","type":"single","prompt":"Ruba receives the results of a 28-day test with a 4% lift on the primary metric, all guardrails green. Which check does she run before reading any of it?","options":[{"key":"A","text":"Regression adjustment, to narrow the interval"},{"key":"B","text":"A false discovery correction over the segments"},{"key":"C","text":"The sample ratio check on the assignment counts"},{"key":"D","text":"A power calculation for the observed effect"}],"correct":[2],"explanation":"If the split is not what was planned, no metric of the test can be trusted, so that check comes before every other.","misconceptions":["Puts precision before validity: a narrower interval on a broken test is still broken","Treats many segments as the first risk, when a broken split would void every segment too","","Confuses a planning tool with a check of a finished test"],"lo":["LO6"]},{"id":"check-capping-q1","slide":"check-capping","type":"single","prompt":"Ruba wants to cap order value at the 99th percentile for T-101's revenue metric. Which data should set the cap?","options":[{"key":"A","text":"Order values from both arms pooled, or from history before the test"},{"key":"B","text":"Order values of the control arm only"},{"key":"C","text":"Each arm's own 99th percentile"},{"key":"D","text":"Whichever cap gives the smallest p-value"}],"correct":[0],"explanation":"A cap must be the same rule for both arms and fixed independently of the result; pooled or historical data does both.","misconceptions":["","Thinks the control arm is neutral, but a cap from one arm still treats the arms differently","Believes each arm deserves its own percentile, which makes the metric depend on the treatment","Chooses the cap after seeing the result, which lets the analyst pick a favourable estimate"],"lo":["LO1"]},{"id":"check-cuped-q1","slide":"check-cuped","type":"single","prompt":"Ruba wants a stronger adjustment for T-101 and considers adding one more covariate to the regression. Which one is safe?","options":[{"key":"A","text":"Number of searches during the test"},{"key":"B","text":"Revenue during the test"},{"key":"C","text":"Day of the first search in the test"},{"key":"D","text":"Revenue in the 28 pre-period days"}],"correct":[3],"explanation":"A covariate measured before assignment cannot be changed by the treatment, so adjusting for it removes noise without removing effect.","misconceptions":["Ignores that searches after assignment can be changed by the new ranking, so the covariate carries part of the effect","Treats an outcome of the test as a covariate, which removes the effect itself","Forgets that the trigger day depends on behaviour during the test, which the treatment may affect in other tests",""],"lo":["LO1"]},{"id":"check-ratio-q1","slide":"check-ratio","type":"single","prompt":"A test randomises customers and reports clicks per page view: 1.9 million views, 80,000 customers. Which standard error should the analysis use?","options":[{"key":"A","text":"The binomial standard error over 1.9 million views"},{"key":"B","text":"A delta-method standard error over the 80,000 customers"},{"key":"C","text":"The standard error of the mean of each customer's click rate"},{"key":"D","text":"A bootstrap that resamples page views"}],"correct":[1],"explanation":"The variance must be computed over the unit that was randomised; the delta method does that for a ratio of sums.","misconceptions":["Counts page views as independent trials, ignoring that one customer's views move together","","Averages each customer's own rate, which answers a different question and weights light users like heavy ones","Resamples the wrong unit and reproduces the naive error"],"lo":["LO2"]},{"id":"check-strata-q1","slide":"check-strata","type":"single","prompt":"Sufrah plans a 2,000-customer pilot in two cities whose customers order at very different rates. Which design reduces the variance of the estimate most?","options":[{"key":"A","text":"A simple 50/50 randomisation, analysed as a simple difference"},{"key":"B","text":"Strata for every district, analysed per district"},{"key":"C","text":"Randomisation within each city, analysed with the city strata"},{"key":"D","text":"A separate test in each city, reported side by side"}],"correct":[2],"explanation":"When the strata explain much of the variance and the test is small, randomising within strata prevents imbalance and removes the between-strata noise.","misconceptions":["Thinks a simple randomisation always balances, which is only true on average and fails most in small samples","Believes more strata are always better; tiny strata give noisy means and unstable variances","","Confuses reporting results per city with estimating the overall effect more precisely"],"lo":["LO1"]}],"ai":{"context":{"course":"../context/course.md","courseJs":"../context/course.js","day":"day2.md","llms":"../llms.txt"},"tasks":[],"tools":[]},"bridge":{"allowedOrigins":[]},"features":{},"strings":{}}</script>
+<script src="../_engine/academy.js"></script>
+</body>
+</html>

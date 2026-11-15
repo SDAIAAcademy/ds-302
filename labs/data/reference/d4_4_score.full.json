@@ -1,0 +1,25 @@
+{
+ "__frame__": {
+  "columns": [
+   "mine",
+   "board",
+   "match"
+  ],
+  "index": [
+   "W1",
+   "W2"
+  ],
+  "data": [
+   [
+    "iterate",
+    "iterate",
+    true
+   ],
+   [
+    "stop",
+    "stop",
+    true
+   ]
+  ]
+ }
+}
