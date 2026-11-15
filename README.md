@@ -82,7 +82,7 @@ Every lab is a notebook in `labs/`. Open it in Google Colab from the course page
 
 A design and analysis pack for an AI-feature change (pre-registration, sequential plan, guardrails, variance-reduced analysis, launch recommendation) in a public repository, defended in a ten-minute review-board session
 
-**Submission:** a link to a public GitHub repository with the pack: pre-registration, sequential plan, guardrails, the variance-reduced analysis that reruns from the generator, and the one-page recommendation. Each participant chooses one of three AI-feature changes in Lab 4.4; `labs/capstone/README.md` describes the pack and `sufrah.capstone_data()` generates its data. In the defence the assessor changes the traffic or the pre-period and the participant reruns the power calculation live. The defence takes ten minutes: seven to present, three for the board's questions.
+**Submission:** a link to a public GitHub repository with the pack: pre-registration, sequential plan, guardrails, the variance-reduced analysis that reruns from the generator, and the one-page recommendation. Each participant chooses one of three AI-feature changes in Lab 4.4; `labs/capstone/README.md` describes the pack, `sufrah.capstone_data()` generates its data and `labs/capstone/starter.py` writes it to CSV with a first look. In the defence the assessor changes the traffic or the pre-period and the participant reruns the power calculation live. The defence takes ten minutes: seven to present, three for the board's questions.
 
 | Criterion | Weight |
 |---|---|
@@ -139,10 +139,3 @@ Each line is a capability; the examples are interchangeable.
 - [SciPy: scipy.stats.chisquare](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chisquare.html)
 - [DuckDB documentation](https://duckdb.org/docs/stable/)
 <!-- /academy:sources -->
-
-### National references
-
-- Personal Data Protection Law and its implementing regulations: https://sdaia.gov.sa/en/SDAIA/about/Documents/PersonalDataProtectionLaw.pdf and https://sdaia.gov.sa/en/SDAIA/about/Documents/ImplementingRegulationPersonalDataProtectionLaw.pdf
-- NDMO Data Classification Policy: https://sdaia.gov.sa/en/SDAIA/about/Documents/DataClassificationPolicy.pdf
-- SDAIA AI Ethics Principles: https://sdaia.gov.sa/en/SDAIA/about/Documents/ai-principles.pdf
-- SDAIA Generative AI Guidelines: https://sdaia.gov.sa/en/SDAIA/about/Files/GenAIGuidelinesForGovernmentENCompressed.pdf (for government) and https://sdaia.gov.sa/en/SDAIA/about/Files/GenerativeAIPublicEN.pdf (for the public)

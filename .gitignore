@@ -34,3 +34,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 /*.log
+
+# Files the labs and the capstone starter write when they run
+labs/artifacts/
+labs/capstone/out/
