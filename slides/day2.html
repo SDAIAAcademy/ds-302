@@ -1,158 +1,379 @@
 <section class="slide title" id="title" data-auto="title">
-  <aside class="notes">REPLACE: welcome; introduce yourself; one question to the room that calibrates the pace; the rhythm of the day</aside>
+  <aside class="notes"><p>Open with yesterday's number: T-101's triggered effect on orders was +0.253 with an interval from +0.163 to +0.343. Today the same data gives an interval half as wide, without a single extra customer. Ask the room to guess how.</p></aside>
 </section>
 
-<section class="slide" id="agenda" data-auto="agenda"></section>
+<section class="slide" id="agenda" data-auto="agenda">
+  <aside class="notes"><p>Four ways to a narrower interval or a correct one: capping the tail, pre-period data, intervals for ratio metrics that respect the randomisation unit, and strata. All on the T-101 stream.</p></aside>
+</section>
 
-<!-- Session 1 -->
+<section class="slide" id="review-day1" data-lo="LO6" data-label="Review">
+  <div class="kicker">Review of Day 1</div>
+  <h2>Which check comes first?</h2>
+  <div class="quiz" data-type="single" data-lo="LO6">
+    <p class="lead">Ruba receives the results of a 28-day test with a 4% lift on the primary metric, all guardrails green. Which check does she run before reading any of it?</p>
+    <div class="opts">
+      <div class="opt" data-why="Puts precision before validity: a narrower interval on a broken test is still broken">Regression adjustment, to narrow the interval</div>
+      <div class="opt" data-why="Treats many segments as the first risk, when a broken split would void every segment too">A false discovery correction over the segments</div>
+      <div class="opt" data-ok>The sample ratio check on the assignment counts</div>
+      <div class="opt" data-why="Confuses a planning tool with a check of a finished test">A power calculation for the observed effect</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> If the split is not what was planned, no metric of the test can be trusted, so that check comes before every other.</div>
+  </div>
+  <aside class="notes"><p>Answer: C. Ask one participant to say where they would look if it failed (platform, build, day). Two minutes, then move on.</p></aside>
+</section>
 
+<!-- ======================= SESSION 1 ======================= -->
 <section class="slide section" id="s1" data-auto="section" data-session="1"></section>
 
-<section class="slide" id="s1-idea" data-lo="LO1">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
-  <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
-    </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
+<section class="slide" id="variance-sources" data-lo="LO1" data-label="Where variance lives">
+  <div class="kicker">Lab 2.1, step 1</div>
+  <h2>One customer in a hundred carries half the variance of revenue</h2>
+  <div class="cols cols-3">
+    <div class="stat"><div class="big">753</div><div class="lbl">SAR, standard deviation of revenue per triggered customer</div></div>
+    <div class="stat"><div class="big">536</div><div class="lbl">SAR, the same without the top 1% of customers</div></div>
+    <div class="stat"><div class="big">49%</div><div class="lbl">of the variance from that top 1%</div></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+  <p class="small mt">85,080 triggered customers, 561,609 test-period orders. About one order in a hundred is a group order worth many baskets.</p>
+  <aside class="notes"><p>Numbers from the solution run of Lab 2.1, full mode. The variance of a mean is the variance of the metric over n: half the variance in a few customers means half the width of the interval decided by who placed a catering order this month.</p></aside>
 </section>
 
-<section class="slide" id="s1-steps" data-lo="LO1">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="capping-rule" data-lo="LO1" data-label="Capping">
+  <div class="kicker">Capping, also called winsorising</div>
+  <h2>Count each order up to a cap set from both arms pooled</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="Lab 2.1"><code class="language-python">cap = orders.value.quantile(0.99)   # pooled
+v = orders.value.clip(upper=cap)
+revenue = v.groupby(orders.customer_id).sum()</code></pre>
+    <table class="t small">
+      <tr><th>Cap</th><th class="num">SAR</th></tr>
+      <tr><td>99.9th percentile</td><td class="num">1,402</td></tr>
+      <tr><td>99th percentile</td><td class="num">337</td></tr>
+      <tr><td>95th percentile</td><td class="num">184</td></tr>
+    </table>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <div class="callout warn mt"><b>Never set the cap per arm.</b> A cap that depends on the treatment can create a difference on its own.</div>
+  <aside class="notes"><p>Cap percentiles are from the pooled test-period orders of triggered customers. In a real programme the cap is fixed in the pre-registration, from historical data, before the test starts. Ask: what does a cap at the 99th percentile mean for a customer who places one SAR 2,000 catering order? It counts as SAR 337.</p></aside>
+</section>
+
+<section class="slide" id="cap-changes-estimand" data-lo="LO1" data-label="A new estimand">
+  <div class="kicker">The price of a cap</div>
+  <h2>A capped metric estimates a different, smaller effect</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li>The ranking adds orders, some of them group orders.</li>
+      <li>Capped, those orders count for less: the effect on the capped metric is smaller than on revenue.</li>
+      <li>That gap is a <b>bias</b> if the decision is about revenue.</li>
+    </ul>
+    <div class="card c-purple"><h4>Only in synthetic data</h4><p class="small mb0">The generator knows every customer's orders under both arms, so the true effect of each cap is exact. No real test can measure this bias; a simulation can.</p></div>
+  </div>
+  <aside class="notes"><p>This is why the course uses synthetic data: the potential outcomes (_potential in the stream) let you compute the true uncapped effect, 17.91 SAR per triggered customer, and the true effect under each cap. In practice you estimate the bias the same way, by simulating on historical data.</p></aside>
+</section>
+
+<section class="slide" id="cap-tradeoff" data-lo="LO1" data-label="The trade">
+  <div class="kicker">Lab 2.1, full mode</div>
+  <h2>The 99th-percentile cap gives the smallest total error</h2>
+  <table class="t">
+    <tr><th>Cap</th><th class="num">Estimate</th><th class="num">Standard error</th><th class="num">True effect</th><th class="num">Bias against uncapped</th><th class="num">Root mean square error</th></tr>
+    <tr><td>none</td><td class="num">20.13</td><td class="num">5.17</td><td class="num">17.91</td><td class="num">0</td><td class="num">5.16</td></tr>
+    <tr><td>99.9th</td><td class="num">19.71</td><td class="num">4.34</td><td class="num">17.37</td><td class="num">-0.54</td><td class="num">4.37</td></tr>
+    <tr class="hl"><td>99th</td><td class="num">19.11</td><td class="num">4.02</td><td class="num">16.70</td><td class="num">-1.21</td><td class="num">4.20</td></tr>
+    <tr><td>95th</td><td class="num">17.92</td><td class="num">3.72</td><td class="num">15.91</td><td class="num">-1.99</td><td class="num">4.23</td></tr>
+  </table>
+  <p class="small mt-s">SAR per triggered customer over 28 days.</p>
+  <aside class="notes"><p>Read the columns in order: the standard error falls as the cap tightens, the bias grows, and the root mean square error (bias and noise together) bottoms out at the 99th percentile. The 95th is close behind; with a smaller test the noise would dominate and a tighter cap would win. Note the uncapped estimate, 20.13, against the truth, 17.91: one test's noise is larger than any cap's bias.</p></aside>
+</section>
+
+<section class="slide" id="cap-reporting" data-lo="LO1" data-label="Reporting">
+  <div class="kicker">Writing it down</div>
+  <h2>Pre-register the cap, report the uncapped result beside it</h2>
+  <ol class="bullets">
+    <li>The percentile and the data it comes from: pooled, before the test.</li>
+    <li>What the metric now means: revenue with each order counted up to SAR 337.</li>
+    <li>The uncapped estimate in the appendix, so nobody wonders what was hidden.</li>
+  </ol>
+  <div class="callout tip mt"><b>Capping is not deleting.</b> The large orders stay in the data; they just stop deciding the interval.</div>
+  <aside class="notes"><p>Deleting outliers changes the population; capping keeps every customer and limits each order's influence. Ask the room whether their own dashboards cap, and at what. Many platforms offer a percentile cap as a metric setting; check the documentation of the one you use.</p></aside>
+</section>
+
+<section class="slide" id="check-capping" data-lo="LO1">
+  <div class="kicker">Checkpoint</div>
+  <h2>Where does the cap come from?</h2>
+  <div class="quiz" data-type="single" data-lo="LO1">
+    <p class="lead">Ruba wants to cap order value at the 99th percentile for T-101's revenue metric. Which data should set the cap?</p>
+    <div class="opts">
+      <div class="opt" data-ok>Order values from both arms pooled, or from history before the test</div>
+      <div class="opt" data-why="Thinks the control arm is neutral, but a cap from one arm still treats the arms differently">Order values of the control arm only</div>
+      <div class="opt" data-why="Believes each arm deserves its own percentile, which makes the metric depend on the treatment">Each arm's own 99th percentile</div>
+      <div class="opt" data-why="Chooses the cap after seeing the result, which lets the analyst pick a favourable estimate">Whichever cap gives the smallest p-value</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A cap must be the same rule for both arms and fixed independently of the result; pooled or historical data does both.</div>
+  </div>
+  <aside class="notes"><p>Answer: A. Option D happens more often than people admit; call it what it is, a forking path.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-2-1" data-auto="lab" data-lab="2.1">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-tutor lab. Watch for customers with no order dropped from the revenue Series (the reindex with fill_value=0 is the fix) and for caps computed per arm. Full mode runs in a few seconds.</p></aside>
 </section>
 
-<!-- Session 2 -->
-
+<!-- ======================= SESSION 2 ======================= -->
 <section class="slide section" id="s2" data-auto="section" data-session="2"></section>
 
-<section class="slide" id="s2-idea" data-lo="LO1">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
+<section class="slide" id="habits-persist" data-lo="LO1" data-label="Habits">
+  <div class="kicker">The idea</div>
+  <h2>Last month's orders predict this month's, whatever the arm</h2>
   <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
+    <div class="stat"><div class="big">0.85</div><div class="lbl">correlation between orders in the 28 pre-period days and the 28 test days, triggered customers</div></div>
+    <ul class="bullets small">
+      <li>Most of the variance between customers is habit, and habit was there before the test.</li>
+      <li>Remove what the pre-period predicts and the remaining noise is small.</li>
+      <li>The pre-period cannot carry the effect: it ended before assignment.</li>
     </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+  <aside class="notes"><p>Correlation from Lab 2.2, full mode. For revenue the correlation is lower, 0.59, because group orders are not habits. Ask what a correlation of zero would mean: nothing to gain.</p></aside>
 </section>
 
-<section class="slide" id="s2-steps" data-lo="LO1">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="cuped-formula" data-lo="LO1" data-label="CUPED">
+  <div class="kicker">CUPED</div>
+  <h2>Subtract theta times the centred pre-period metric</h2>
+  <div class="cols cols-2">
+    <pre class="code" data-file="Lab 2.2"><code class="language-python">theta = cov(y, x) / var(x)       # both arms pooled
+y_cuped = y - theta * (x - x.mean())
+diff_ci(y_cuped, t)</code></pre>
+    <ul class="bullets small">
+      <li>Same expected difference: the term has mean zero in each arm.</li>
+      <li>Variance multiplied by 1 - rho²: here 0.27.</li>
+      <li>theta = 0.864 for orders in T-101.</li>
+    </ul>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <aside class="notes"><p>The method was published by Deng, Xu, Kohavi and Walker (2013) under the name CUPED. GrowthBook's documentation describes the same estimator, with theta from a regression of post-exposure on pre-exposure data pooled across the variations, and 14 days of pre-exposure data by default. Sources: the CUPED paper and GrowthBook's CUPED page (course sources).</p></aside>
+</section>
+
+<section class="slide" id="cuped-result" data-lo="LO1" data-label="The result">
+  <div class="kicker">Lab 2.2, full mode</div>
+  <h2>The interval halves; the estimate stays compatible</h2>
+  <table class="t">
+    <tr><th>Orders per triggered customer</th><th class="num">Difference</th><th class="num">Standard error</th><th class="num">95% interval</th></tr>
+    <tr><td>Unadjusted</td><td class="num">+0.253</td><td class="num">0.046</td><td class="num">+0.163 to +0.343</td></tr>
+    <tr class="hl"><td>Adjusted (CUPED)</td><td class="num">+0.226</td><td class="num">0.024</td><td class="num">+0.179 to +0.273</td></tr>
+  </table>
+  <div class="cols cols-2 mt">
+    <div class="stat"><div class="big">73%</div><div class="lbl">less variance</div></div>
+    <div class="stat"><div class="big">3.7×</div><div class="lbl">the customers an unadjusted test would need for the same precision</div></div>
+  </div>
+  <aside class="notes"><p>This is LO1's evidence: unadjusted and adjusted intervals with the effective sample-size gain. The estimate moved from 0.253 to 0.226 because the treatment arm happened to have slightly heavier orderers before the test (6.449 against 6.418 orders); the adjustment corrects that chance imbalance. Both are estimates of the same effect.</p></aside>
+</section>
+
+<section class="slide" id="cuped-regression" data-lo="LO1" data-label="As a regression">
+  <div class="kicker">The same thing, as a regression</div>
+  <h2>Regression adjustment gives the same number to four decimals</h2>
+  <pre class="code" data-file="Lab 2.2, step 4"><code class="language-python">d = df.assign(xc=df.orders_pre - df.orders_pre.mean())
+fit = smf.ols("orders ~ treat + xc", data=d).fit(cov_type="HC2")
+fit.params["treat"], fit.bse["treat"]    # 0.2261, 0.0241</code></pre>
+  <ul class="bullets small mt-s">
+    <li>The regression form extends to several covariates: pre-period orders, revenue, city.</li>
+    <li>Use robust standard errors; centre the covariate so the treatment coefficient is the average effect.</li>
+  </ul>
+  <aside class="notes"><p>With one covariate and theta pooled, CUPED and the regression with a common slope are the same estimator. With many covariates, keep them few and measured before assignment; a covariate measured after assignment can carry part of the effect.</p></aside>
+</section>
+
+<section class="slide" id="effective-n" data-lo="LO1" data-label="Effective size">
+  <div class="kicker">Reporting the saving</div>
+  <h2>Report the gain as customers: it is what the business buys</h2>
+  <div class="bars">
+    <div class="row"><span>Orders, 28 pre-period days</span><div class="bar c-teal" style="--w:100%"></div><span class="val">3.7× the customers</span></div>
+    <div class="row"><span>Revenue, 28 pre-period days</span><div class="bar c-cyan" style="--w:41%"></div><span class="val">about 1.5×</span></div>
+  </div>
+  <p class="small mt">Gain = 1 / (1 - rho²). Orders: rho = 0.85. Revenue: rho = 0.59, so 1 / (1 - 0.34) ≈ 1.5.</p>
+  <div class="callout tip mt-s"><b>For T-101</b>: a revenue test that needed 55 days on Day 1 needs far fewer with capping and adjustment together.</div>
+  <aside class="notes"><p>The revenue gain is computed from the correlation printed in the lab's look-at step (0.586). Capping first raises it, because the uncorrelated group orders lose weight. The stretch compares 14 and 28 pre-period days.</p></aside>
+</section>
+
+<section class="slide" id="check-cuped" data-lo="LO1">
+  <div class="kicker">Checkpoint</div>
+  <h2>What can go into the adjustment?</h2>
+  <div class="quiz" data-type="single" data-lo="LO1">
+    <p class="lead">Ruba wants a stronger adjustment for T-101 and considers adding one more covariate to the regression. Which one is safe?</p>
+    <div class="opts">
+      <div class="opt" data-why="Ignores that searches after assignment can be changed by the new ranking, so the covariate carries part of the effect">Number of searches during the test</div>
+      <div class="opt" data-why="Treats an outcome of the test as a covariate, which removes the effect itself">Revenue during the test</div>
+      <div class="opt" data-why="Forgets that the trigger day depends on behaviour during the test, which the treatment may affect in other tests">Day of the first search in the test</div>
+      <div class="opt" data-ok>Revenue in the 28 pre-period days</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A covariate measured before assignment cannot be changed by the treatment, so adjusting for it removes noise without removing effect.</div>
+  </div>
+  <aside class="notes"><p>Answer: D. Option C is subtle: in T-101 the first search is not affected by the ranking, but the rule "before assignment" is the one to remember.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-2-2" data-auto="lab" data-lab="2.2">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-off for the first attempt: participants compute theta and the adjusted interval themselves, then may ask an assistant to review. Common errors: theta computed per arm, and the covariate not centred (the estimate then shifts by theta times the difference in pre-period means, which is small but visible).</p></aside>
 </section>
 
-<!-- Session 3 -->
-
+<!-- ======================= SESSION 3 ======================= -->
 <section class="slide section" id="s3" data-auto="section" data-session="3"></section>
 
-<section class="slide" id="s3-idea" data-lo="LO2">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
+<section class="slide" id="ratio-metrics" data-lo="LO2" data-label="Ratio metrics">
+  <div class="kicker">Ratio metrics</div>
+  <h2>Orders per session: the numerator and the denominator both vary</h2>
   <div class="cols cols-2">
     <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
+      <li>Randomised: customers. Counted: sessions and orders.</li>
+      <li>The metric: all orders over all sessions in the arm, a ratio of two sums.</li>
+      <li>Not the mean of each customer's own rate, which weights a one-session customer like a fifty-session one.</li>
     </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
+    <div class="stat"><div class="big">0.2036 vs 0.1964</div><div class="lbl">orders per session, treatment and control: +3.7%</div></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+  <aside class="notes"><p>From Lab 2.3: 85,080 triggered customers and 2,807,935 sessions in the test period. Clicks per page view, revenue per order and orders per session are all ratio metrics. The trap is always the same: the unit of analysis is smaller than the unit of randomisation.</p></aside>
 </section>
 
-<section class="slide" id="s3-steps" data-lo="LO2">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="naive-too-narrow" data-lo="LO2" data-label="The naive interval">
+  <div class="kicker">The trap</div>
+  <h2>Treating sessions as independent makes the interval 2.6 times too narrow</h2>
+  <div class="bars">
+    <div class="row"><span>Naive, sessions as trials</span><div class="bar c-coral" style="--w:38%"></div><span class="val">± 0.0009</span></div>
+    <div class="row"><span>Delta method, by customer</span><div class="bar c-teal" style="--w:100%"></div><span class="val">± 0.0024</span></div>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <div class="callout warn mt"><b>Why it matters.</b> An interval 2.6 times too narrow turns noise into wins: the A/A test of Day 1 would show far more than 5% false wins.</div>
+  <aside class="notes"><p>Standard errors from Lab 2.3: naive 0.00048, delta method 0.00124. Sessions of one customer are alike: same habits, same appetite. The binomial formula assumes 2.8 million independent trials when there are 85,080 independent customers.</p></aside>
+</section>
+
+<section class="slide" id="delta-method" data-lo="LO2" data-label="Delta method">
+  <div class="kicker">The delta method</div>
+  <h2>Compute the variance of a ratio from customer-level sums</h2>
+  <pre class="code" data-file="Lab 2.3, step 3"><code class="language-python">o, s = arm.orders, arm.sessions          # one row per customer
+r = o.mean() / s.mean()
+c = np.cov(o, s)
+var_r = (c[0,0] - 2*r*c[0,1] + r**2*c[1,1]) / (n * s.mean()**2)</code></pre>
+  <ul class="bullets small mt-s">
+    <li>A first-order Taylor expansion of mean(O) / mean(S) around its expectation.</li>
+    <li>Every term is per customer, the unit that was randomised.</li>
+  </ul>
+  <aside class="notes"><p>Deng, Knoblich and Lu (2018) describe the method for metric analytics and its pitfalls (course sources). The formula is per arm; the variance of the difference is the sum of the two. For a relative difference apply the method once more (the stretch).</p></aside>
+</section>
+
+<section class="slide" id="bootstrap-check" data-lo="LO2" data-label="Bootstrap">
+  <div class="kicker">The check</div>
+  <h2>A bootstrap over customers agrees within 4%</h2>
+  <table class="t">
+    <tr><th>Method</th><th class="num">Standard error</th><th class="num">95% interval of the difference</th></tr>
+    <tr><td>Naive, sessions</td><td class="num">0.00048</td><td class="num">+0.0063 to +0.0081</td></tr>
+    <tr class="hl"><td>Delta method</td><td class="num">0.00124</td><td class="num">+0.0048 to +0.0096</td></tr>
+    <tr class="hl"><td>Bootstrap, 1,000 resamples of customers</td><td class="num">0.00120</td><td class="num">+0.0048 to +0.0095</td></tr>
+  </table>
+  <p class="small mt-s">Poisson bootstrap: each customer gets a weight from Poisson(1), all their sessions and orders with it.</p>
+  <aside class="notes"><p>This is LO2's evidence: two agreeing intervals and a note on why the naive one is too narrow. The bootstrap resamples the unit that was randomised; resampling sessions would reproduce the naive interval's mistake.</p></aside>
+</section>
+
+<section class="slide" id="check-ratio" data-lo="LO2">
+  <div class="kicker">Checkpoint</div>
+  <h2>Which interval is right for clicks per view?</h2>
+  <div class="quiz" data-type="single" data-lo="LO2">
+    <p class="lead">A test randomises customers and reports clicks per page view: 1.9 million views, 80,000 customers. Which standard error should the analysis use?</p>
+    <div class="opts">
+      <div class="opt" data-why="Counts page views as independent trials, ignoring that one customer's views move together">The binomial standard error over 1.9 million views</div>
+      <div class="opt" data-ok>A delta-method standard error over the 80,000 customers</div>
+      <div class="opt" data-why="Averages each customer's own rate, which answers a different question and weights light users like heavy ones">The standard error of the mean of each customer's click rate</div>
+      <div class="opt" data-why="Resamples the wrong unit and reproduces the naive error">A bootstrap that resamples page views</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> The variance must be computed over the unit that was randomised; the delta method does that for a ratio of sums.</div>
+  </div>
+  <aside class="notes"><p>Answer: B. If several choose C, show that it changes the estimand, not only the variance.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-2-3" data-auto="lab" data-lab="2.3">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-off for the first attempt. The bootstrap runs in chunks of 50 resamples to keep memory small; a participant who builds a 1,000 by 42,000 weight matrix at once may run out of memory on a small laptop. Full mode takes under ten seconds.</p></aside>
 </section>
 
-<!-- Session 4 -->
-
+<!-- ======================= SESSION 4 ======================= -->
 <section class="slide section" id="s4" data-auto="section" data-session="4"></section>
 
-<section class="slide" id="s4-idea" data-lo="LO1">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
+<section class="slide" id="two-ways-strata" data-lo="LO1" data-label="Two ways">
+  <div class="kicker">Stratification</div>
+  <h2>Use the strata in the design, or in the analysis</h2>
   <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
-    </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
+    <div class="card c-teal"><h4>Stratified assignment</h4><p class="small mb0">Randomise 50/50 inside each city. The arms cannot differ in their city mix.</p></div>
+    <div class="card c-cyan"><h4>Post-stratification</h4><p class="small mb0">Randomise simply, then estimate city by city and weight by each city's share.</p></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+  <p class="small mt">Both remove the noise that comes from differences between cities. Neither can remove more than the cities explain.</p>
+  <aside class="notes"><p>For large tests the two are nearly equivalent. Stratified assignment matters more for small tests, or when a platform must guarantee balance on a key dimension.</p></aside>
 </section>
 
-<section class="slide" id="s4-steps" data-lo="LO1">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="post-strat-formula" data-lo="LO1" data-label="The estimator">
+  <div class="kicker">Lab 2.4, step 3</div>
+  <h2>Estimate per city, weight by each city's share</h2>
+  <pre class="code" data-file="post_strat"><code class="language-python">g = d.groupby(["city", "treat"]).orders.agg(["mean", "var", "size"]).unstack("treat")
+w = (g["size"][0] + g["size"][1]) / len(d)
+est = (w * (g["mean"][1] - g["mean"][0])).sum()
+se = sqrt((w**2 * (g["var"][1]/g["size"][1] + g["var"][0]/g["size"][0])).sum())</code></pre>
+  <aside class="notes"><p>Walk through the four lines. The weights are each city's share of all triggered customers, so the estimate averages over the same population as the simple difference.</p></aside>
+</section>
+
+<section class="slide" id="cities-differ" data-lo="LO1" data-label="Cities">
+  <div class="kicker">Lab 2.4, step 1</div>
+  <h2>Cities differ in their means, and explain 1.2% of the variance</h2>
+  <div class="bars">
+    <div class="row"><span>Riyadh</span><div class="bar c-teal" style="--w:100%"></div><span class="val">7.36</span></div>
+    <div class="row"><span>Jeddah</span><div class="bar c-teal" style="--w:94%"></div><span class="val">6.90</span></div>
+    <div class="row"><span>Dammam</span><div class="bar c-teal" style="--w:87%"></div><span class="val">6.39</span></div>
+    <div class="row"><span>Makkah</span><div class="bar c-teal" style="--w:80%"></div><span class="val">5.87</span></div>
+    <div class="row"><span>Madinah</span><div class="bar c-teal" style="--w:76%"></div><span class="val">5.63</span></div>
+    <div class="row"><span>Abha</span><div class="bar c-teal" style="--w:69%"></div><span class="val">5.09</span></div>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <p class="small mt-s">Orders per triggered customer in the test period. The spread inside each city (standard deviations of 5 to 7.4) dwarfs the spread between them.</p>
+  <aside class="notes"><p>A 45% difference between Riyadh and Abha looks large, and still explains only 1.2% of the variance, because customers within a city differ far more than the cities do.</p></aside>
+</section>
+
+<section class="slide" id="strata-result" data-lo="LO1" data-label="What it buys">
+  <div class="kicker">Lab 2.4, full mode</div>
+  <h2>City strata buy almost nothing; pre-period strata buy a lot</h2>
+  <table class="t">
+    <tr><th>Estimator, orders per triggered customer</th><th class="num">Estimate</th><th class="num">Standard error</th></tr>
+    <tr><td>Simple difference</td><td class="num">+0.253</td><td class="num">0.046</td></tr>
+    <tr><td>Post-stratified by city</td><td class="num">+0.258</td><td class="num">0.046</td></tr>
+    <tr class="hl"><td>Post-stratified by pre-period deciles</td><td class="num">+0.227</td><td class="num">0.028</td></tr>
+    <tr class="hl"><td>CUPED, pre-period orders (Lab 2.2)</td><td class="num">+0.226</td><td class="num">0.024</td></tr>
+  </table>
+  <p class="small mt-s">On a 3,000-customer pilot repeated 1,000 times, city post-stratification cut the variance by 1.3%.</p>
+  <aside class="notes"><p>The decile row is the lab's stretch, computed on the same data. The honest finding: for Sufrah, city strata matter for reporting per city, not for precision. Strata on a strong predictor behave like a coarse regression adjustment.</p></aside>
+</section>
+
+<section class="slide" id="check-strata" data-lo="LO1">
+  <div class="kicker">Checkpoint</div>
+  <h2>When does stratifying by city pay off?</h2>
+  <div class="quiz" data-type="single" data-lo="LO1">
+    <p class="lead">Sufrah plans a 2,000-customer pilot in two cities whose customers order at very different rates. Which design reduces the variance of the estimate most?</p>
+    <div class="opts">
+      <div class="opt" data-why="Thinks a simple randomisation always balances, which is only true on average and fails most in small samples">A simple 50/50 randomisation, analysed as a simple difference</div>
+      <div class="opt" data-why="Believes more strata are always better; tiny strata give noisy means and unstable variances">Strata for every district, analysed per district</div>
+      <div class="opt" data-ok>Randomisation within each city, analysed with the city strata</div>
+      <div class="opt" data-why="Confuses reporting results per city with estimating the overall effect more precisely">A separate test in each city, reported side by side</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> When the strata explain much of the variance and the test is small, randomising within strata prevents imbalance and removes the between-strata noise.</div>
+  </div>
+  <aside class="notes"><p>Answer: C. Contrast with T-101: 85,000 customers in six cities that explain 1.2% of the variance, where strata change nothing.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-2-4" data-auto="lab" data-lab="2.4">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-off for the first attempt. The pilot loop takes about ten seconds in full mode. Common error: weights from the treatment arm only. The stretch, pre-period deciles, connects to Lab 2.2.</p></aside>
 </section>
 
-<section class="slide" id="wrap-up">
-  <div class="kicker">Day 2 · wrap-up</div>
+<section class="slide" id="wrap-up" data-label="Wrap-up">
+  <div class="kicker">Day 2</div>
   <h2>Three things to keep</h2>
   <div class="cols cols-3">
-    <div class="card c-teal"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
-    <div class="card c-coral"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
-    <div class="card c-purple"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
+    <div class="card c-teal"><h4>Cap, and say so</h4><p class="small mb0">A pooled cap trades a small, stated bias for less noise.</p></div>
+    <div class="card c-cyan"><h4>Use the pre-period</h4><p class="small mb0">Regression adjustment halved T-101's interval: 3.7 times the customers for free.</p></div>
+    <div class="card c-coral"><h4>Respect the unit</h4><p class="small mb0">Compute every interval over the unit that was randomised.</p></div>
   </div>
+  <aside class="notes"><p>Ask for one metric in each participant's work that is a ratio metric, and how its interval is computed today.</p></aside>
 </section>
 
 <section class="slide dark" id="next" data-label="Next">
-  <div class="kicker">Next</div>
-  <h2>Day 3: Monitoring and interference</h2>
-  <p class="lead">REPLACE: what participants prepare before then; unfinished labs can be finished at home</p>
-  <aside class="notes">REPLACE: accounts, installs or reading participants need before the next unit</aside>
+  <div class="kicker">Day 3</div>
+  <h2>Next: watching tests every day, and tests where customers share couriers</h2>
+  <ul class="bullets">
+    <li>Why daily peeking invents wins, and two ways to look safely</li>
+    <li>A dispatch test whose customer-randomised result is mostly stealing</li>
+    <li>City-by-hour switchbacks and their power</li>
+  </ul>
+  <aside class="notes"><p>Nothing to prepare. Day 3 uses two simulators in sufrah.py; no data from today is needed.</p></aside>
 </section>

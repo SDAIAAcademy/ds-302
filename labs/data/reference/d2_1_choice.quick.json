@@ -1,0 +1,4 @@
+{
+ "cap": "p95",
+ "why": "p95 has the lowest error around the uncapped effect: it removes most of the group-order noise for a small, stated bias; the estimand is revenue with each order counted up to that value."
+}

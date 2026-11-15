@@ -409,7 +409,7 @@
             "href": "D2_4_stratification.ipynb",
             "steps": [
               {
-                "text": "Revenue by city: how much the cities differ",
+                "text": "Orders by city: how much the cities differ",
                 "minutes": 4
               },
               {
@@ -429,7 +429,7 @@
                 "minutes": 4
               }
             ],
-            "stretch": "Stratify on pre-period revenue deciles and compare with Lab 2.2"
+            "stretch": "Stratify on deciles of pre-period orders and compare with Lab 2.2"
           },
           "summary": "Cities differ; using that in design or analysis removes between-city noise, sometimes by little"
         }

@@ -1,0 +1,4 @@
+{
+ "ratio": 2.603268848447311,
+ "why": "Sessions of one customer are alike (same habits, same conversion), so they are not independent trials; customers were randomised, and the variance must be computed over customers."
+}

@@ -262,6 +262,296 @@
       "level": "understand",
       "pool": "practice",
       "weight": 1
+    },
+    {
+      "id": "cap-pooled",
+      "type": "single",
+      "prompt": "An analyst caps basket value for a promotion test at each arm's own 99th percentile. The treatment arm has more large baskets. What is the problem?",
+      "options": [
+        "The cap now depends on the treatment, so it can create or hide a difference",
+        "A 99th percentile cap is too loose to matter",
+        "None: each arm is treated by the same rule",
+        "The treatment arm is capped lower in relative terms than control"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "A cap must be one value for both arms, fixed from pooled or historical data; per-arm caps make the metric depend on the treatment.",
+      "misconceptions": [
+        "",
+        "Ignores that the issue is where the cap comes from, not how tight it is",
+        "Thinks \"the same percentile\" means the same rule, when the cap values then differ by arm",
+        "Gets the direction of the distortion wrong"
+      ],
+      "lo": [
+        "LO1"
+      ],
+      "day": "day2",
+      "session": 1,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "cap-tradeoff",
+      "type": "single",
+      "prompt": "Capping order value at a lower percentile always reduces the standard error of revenue per customer. Why not cap at the median?",
+      "options": [
+        "A median cap would make the sample ratio check fail",
+        "Regulators forbid capping below the 90th percentile",
+        "The standard error would rise again below some cap",
+        "The estimand moves away from revenue and the bias grows until it dominates the error"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "Each tighter cap removes noise but shifts what is estimated; past some point the bias costs more than the noise saved.",
+      "misconceptions": [
+        "Confuses a metric transformation with assignment",
+        "Invents a rule; the limit is statistical, not regulatory",
+        "Thinks the variance curve turns back up, when it keeps falling",
+        ""
+      ],
+      "lo": [
+        "LO1"
+      ],
+      "day": "day2",
+      "session": 1,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "cuped-gain",
+      "type": "single",
+      "prompt": "The correlation between a metric in the pre-period and in the test period is 0.6. Regression adjustment on the pre-period gives roughly what effective sample-size gain?",
+      "options": [
+        "1.6 times",
+        "2.5 times",
+        "1.56 times",
+        "No gain, because the pre-period has no treatment effect"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "The variance falls by a factor 1 - 0.36 = 0.64, so the gain is 1 / 0.64, about 1.56 times the customers.",
+      "misconceptions": [
+        "Adds the correlation to one instead of using its square",
+        "Uses one over (1 - rho) instead of one over (1 - rho squared)",
+        "",
+        "Confuses carrying no effect with carrying no information about the noise"
+      ],
+      "lo": [
+        "LO1"
+      ],
+      "day": "day2",
+      "session": 2,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "cuped-covariate",
+      "type": "single",
+      "prompt": "Which covariate can safely be used for regression adjustment in a test of a new checkout page?",
+      "options": [
+        "Number of checkout page views during the test",
+        "Orders in the 28 days before assignment",
+        "Whether the customer saw the new page",
+        "Orders in the test period"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "A covariate measured before assignment cannot be affected by the treatment, so it removes noise without removing effect.",
+      "misconceptions": [
+        "Uses a variable the treatment can change, which absorbs part of the effect",
+        "",
+        "Conditions on exposure, which differs by arm by design",
+        "Adjusts the outcome for itself and removes the effect"
+      ],
+      "lo": [
+        "LO1"
+      ],
+      "day": "day2",
+      "session": 2,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "cuped-theta-pooled",
+      "type": "single",
+      "prompt": "Why is the CUPED coefficient theta estimated on both arms pooled rather than separately in each arm?",
+      "options": [
+        "Separate slopes can absorb part of the treatment effect into the adjustment",
+        "Pooling makes the pre-period means equal",
+        "The control arm's slope would always be zero",
+        "It is faster to compute once"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "With one pooled theta the adjustment depends only on habits; arm-specific slopes let the adjustment differ by arm and bias the difference.",
+      "misconceptions": [
+        "",
+        "Randomisation, not pooling, makes the pre-period means equal in expectation",
+        "Misunderstands the slope as an effect of the treatment",
+        "Gives a convenience reason for a validity question"
+      ],
+      "lo": [
+        "LO1"
+      ],
+      "day": "day2",
+      "session": 2,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "ratio-unit",
+      "type": "single",
+      "prompt": "A test randomises customers and reports revenue per order. The analyst computes the standard error as the standard deviation of order values over the square root of the number of orders. What happens?",
+      "options": [
+        "The estimate is biased but the interval is right",
+        "The interval is about right, because orders are many",
+        "The interval is too wide",
+        "The interval is too narrow, because one customer's orders are correlated"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "Orders of one customer move together; treating them as independent understates the variance. The delta method over customers fixes it.",
+      "misconceptions": [
+        "Locates the error in the point estimate instead of its variance",
+        "Thinks a large count makes rows independent",
+        "Gets the direction wrong: ignoring positive within-customer correlation makes intervals too narrow",
+        ""
+      ],
+      "lo": [
+        "LO2"
+      ],
+      "day": "day2",
+      "session": 3,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "ratio-bootstrap-unit",
+      "type": "single",
+      "prompt": "To check a delta-method interval for orders per session in a customer-randomised test, what should a bootstrap resample?",
+      "options": [
+        "Days, because traffic varies by day",
+        "Orders, because they are the numerator",
+        "Customers, each with all their sessions and orders",
+        "Sessions, because the metric is per session"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "The bootstrap must copy how the data was produced: customers were drawn and randomised, so customers are resampled.",
+      "misconceptions": [
+        "Picks a unit that was neither sampled nor randomised",
+        "Breaks the link between numerator and denominator",
+        "",
+        "Resamples the unit of analysis, reproducing the naive error"
+      ],
+      "lo": [
+        "LO2"
+      ],
+      "day": "day2",
+      "session": 3,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "ratio-naive-when-right",
+      "type": "single",
+      "prompt": "In which design is a session-level binomial interval for orders per session correct?",
+      "options": [
+        "When every customer has at least ten sessions",
+        "When each session is randomised on its own and sessions are independent",
+        "When the test is large",
+        "Never: ratio metrics always need a bootstrap"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "The binomial interval assumes independent trials; that holds when sessions are the randomised, independent unit.",
+      "misconceptions": [
+        "Thinks more sessions per customer make them independent",
+        "",
+        "Confuses sample size with the independence assumption",
+        "Overlooks that the naive interval is right when the unit of analysis is the randomisation unit"
+      ],
+      "lo": [
+        "LO2"
+      ],
+      "day": "day2",
+      "session": 3,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "strata-when",
+      "type": "single",
+      "prompt": "Post-stratifying a 90,000-customer test by city barely changes its standard error. What is the most likely reason?",
+      "options": [
+        "The cities explain little of the variance of the metric",
+        "Post-stratification only works with stratified assignment",
+        "The weights should be the treatment arm's city shares",
+        "The test is too small for strata to help"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "Strata remove only the variance between strata; when cities explain about 1% of it, little is gained.",
+      "misconceptions": [
+        "",
+        "Thinks post-stratification needs design-stage strata",
+        "Changes the estimand without touching the variance",
+        "Has the size effect backwards: imbalance, and so the gain, is larger in small tests"
+      ],
+      "lo": [
+        "LO1"
+      ],
+      "day": "day2",
+      "session": 4,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "strata-weights",
+      "type": "single",
+      "prompt": "In a post-stratified estimate, each city's difference in means is weighted by what?",
+      "options": [
+        "The city's share of the treatment arm",
+        "The inverse of the city's variance, to favour precise cities",
+        "Equal weights, one per city",
+        "The city's share of all customers in the test"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "Weighting by each city's share of all customers keeps the estimand the average effect over the test population.",
+      "misconceptions": [
+        "Uses one arm's mix, which chance imbalance can distort",
+        "Describes a precision-weighted estimate, which targets a different average",
+        "Gives a small city the same say as a large one, changing the estimand",
+        ""
+      ],
+      "lo": [
+        "LO1"
+      ],
+      "day": "day2",
+      "session": 4,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
     }
   ]
 }

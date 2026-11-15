@@ -94,7 +94,7 @@ def keep(name: str, value):
     if WRITE_REF:
         REF.mkdir(parents=True, exist_ok=True)
         path = REF / f"{name}.{MODE}.json"
-        path.write_text(json.dumps(_jsonable(value), indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        path.write_text(json.dumps(_jsonable(value), indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     return value
 
 
@@ -109,7 +109,7 @@ def save(name: str, text: str) -> Path:
     """Write a lab's output (a memo, a log) to labs/artifacts/."""
     ART.mkdir(exist_ok=True)
     path = ART / name
-    path.write_text(text, encoding="utf-8")
+    path.write_text(text, encoding="utf-8", newline="\n")
     print("wrote", path.relative_to(LABS))
     return path
 
@@ -263,8 +263,10 @@ def stream(n: int | None = None, seed: int = 101, lift: float = 0.04) -> dict:
     assignments = pd.DataFrame({"customer_id": ids, "test_id": "T-101", "variant": variant, "assigned_day": 0})
     sessions = pd.DataFrame({"customer_id": ids, "sessions_pre": s_pre, "sessions_test": s_test})
     truth = pd.DataFrame({"customer_id": ids, "triggered": trig, "y0": np.round(y0, 2), "y1": np.round(y1, 2)})
+    potential = pd.DataFrame({"customer_id": ids[cust_idx[test_rows]], "value": value[test_rows],
+                              "extra": seg[test_rows] == 3})
     return {"customers": public, "assignments": assignments, "searches": searches, "sessions": sessions,
-            "orders": orders, "_truth": truth}
+            "orders": orders, "_truth": truth, "_potential": potential}
 
 
 def per_customer(S: dict | None = None) -> pd.DataFrame:
