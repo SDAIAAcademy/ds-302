@@ -362,8 +362,8 @@ def dispatch_sim(assign: str = "customer", days: int = 14, seed: int = 33, p_tre
                     f = 1.0 if blocks[d, h // block_hours] else 0.0
                 sessions = rng.poisson(base_sessions[ci] * HOUR_PROFILE[h] * (1 + 0.08 * (d % 7 in (3, 4))))
                 demand = sessions * 0.24
-                capacity = couriers[ci] * 2.2 * (1 + gain * f * f) * (0.93 + 0.14 * rng.random())
-                rho = min(demand / capacity, 0.96)
+                capacity = couriers[ci] * 2.2 * (1 + gain * f * f) * (0.96 + 0.08 * rng.random())
+                rho = min(demand / capacity, 0.90)
                 r = 6.0 * rho                                       # mean residual work, minutes
                 w_hi = r / (1 - f * rho) if f > 0 else 0.0
                 w_lo = r / ((1 - f * rho) * (1 - rho))

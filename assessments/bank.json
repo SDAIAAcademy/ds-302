@@ -552,6 +552,325 @@
       "level": "apply",
       "pool": "practice",
       "weight": 1
+    },
+    {
+      "id": "peeking-rate",
+      "type": "single",
+      "prompt": "A team checks a test with no true effect every day for four weeks and stops the first time p < 0.05. Roughly what false-win rate should they expect?",
+      "options": [
+        "Under 5%, because later looks have more data",
+        "5%, because each look uses alpha = 0.05",
+        "Between 20% and 30%",
+        "76%, which is 1 - 0.95 to the power 28"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "Daily looks at accumulating data are correlated, so the rate is far below the independent-tests figure but far above 5%; the course simulator gives 28%.",
+      "misconceptions": [
+        "Thinks more data per look lowers the chance of crossing at some look",
+        "Treats each look as if it were the only one",
+        "",
+        "Treats correlated daily looks as independent tests"
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day3",
+      "session": 1,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "obf-shape",
+      "type": "single",
+      "prompt": "Why does an O'Brien-Fleming boundary start very high and end near 2?",
+      "options": [
+        "Because early data is more likely to contain errors",
+        "Because it spends almost no alpha early and nearly all of it at the planned end",
+        "Because the effect grows over time",
+        "Because the variance grows with each look"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "The spending function allots tiny alpha to early looks, so early boundaries are strict and the last look keeps close to the full 5%.",
+      "misconceptions": [
+        "Confuses data quality with the statistical design",
+        "",
+        "Thinks the boundary tracks the effect rather than the error rate",
+        "Gets the direction wrong: the standard error shrinks as data accrues"
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day3",
+      "session": 1,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "gst-acting",
+      "type": "single",
+      "prompt": "A test with a group sequential plan shows z = 2.3 on day 6; the day-6 boundary is 3.6. The product owner asks to launch now. What is the right answer?",
+      "options": [
+        "Keep running: the evidence has not crossed the planned boundary",
+        "Stop for futility: the effect is too small",
+        "Restart the test with a lower boundary",
+        "Launch: 2.3 is above 1.96"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "Acting below the planned boundary would bring back the false-win inflation the plan prevents.",
+      "misconceptions": [
+        "",
+        "Confuses not crossing the efficacy boundary with evidence of no effect",
+        "Changes the plan after seeing data",
+        "Applies the fixed-horizon threshold to a sequential plan"
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day3",
+      "session": 1,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "msprt-guarantee",
+      "type": "single",
+      "prompt": "What property lets an mSPRT keep its false-positive rate at or below alpha however often it is checked?",
+      "options": [
+        "It only allows looks once a day",
+        "It uses a smaller alpha than a fixed test",
+        "Its threshold rises with every look",
+        "Under no effect its likelihood ratio is a martingale with mean 1, so it rarely reaches 1 / alpha"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "By Ville's inequality, the chance that a mean-one nonnegative martingale ever reaches 1 / alpha is at most alpha.",
+      "misconceptions": [
+        "Thinks the guarantee depends on a fixed look schedule",
+        "Confuses the mechanism with a stricter threshold",
+        "Describes a correction schedule the mSPRT does not need",
+        ""
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day3",
+      "session": 2,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "gst-vs-avi",
+      "type": "single",
+      "prompt": "A test has a fixed 28-day maximum, daily batches of data and a team that will act only at planned looks. Which sequential design gives the most power while controlling false wins?",
+      "options": [
+        "Daily checks at alpha = 0.05 with a two-day confirmation rule",
+        "An always-valid test, because it is valid at any time",
+        "A group sequential design with alpha spending",
+        "A fixed test with a Bonferroni correction for 28 looks"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "When the maximum and the looks are known in advance, a group sequential design spends alpha for exactly that plan and has the most power.",
+      "misconceptions": [
+        "Invents an informal rule with an unknown error rate",
+        "Pays for flexibility that is not needed here",
+        "",
+        "Overcorrects by ignoring the correlation between looks"
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day3",
+      "session": 2,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "msprt-tau",
+      "type": "single",
+      "prompt": "In an mSPRT, what does a much larger mixture width tau do?",
+      "options": [
+        "It raises the false-positive rate above alpha",
+        "It tunes the test to larger effects: quicker on big ones, weaker on small ones",
+        "It makes the test equivalent to a fixed test",
+        "It has no effect once the sample is large"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "tau sets which effects the mixture weights most; the error guarantee holds for any tau.",
+      "misconceptions": [
+        "Thinks tau trades away validity; it only trades power between effect sizes",
+        "",
+        "Confuses tuning with the design family",
+        "Overlooks that tau shapes the statistic at every sample size"
+      ],
+      "lo": [
+        "LO3"
+      ],
+      "day": "day3",
+      "session": 2,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "sutva-break",
+      "type": "single",
+      "prompt": "A food-delivery test gives treated customers priority for the next free courier, randomised by customer. The treated arm shows 10 minutes faster delivery. What is the best reading?",
+      "options": [
+        "The difference mostly measures waiting moved from control to treated orders",
+        "The test is invalid because of a sample ratio mismatch",
+        "The rule saves about 10 minutes and should launch",
+        "The rule saves about 5 minutes, half of the difference"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "Shared couriers break no-interference: the difference counts the transfer of waiting twice, and says little about the effect of running the rule for everyone.",
+      "misconceptions": [
+        "",
+        "Names a different fault; nothing here suggests the split broke",
+        "Ignores that control customers lost the minutes the treated gained",
+        "Guesses a fixed share instead of measuring the global effect"
+      ],
+      "lo": [
+        "LO5"
+      ],
+      "day": "day3",
+      "session": 3,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "interference-resources",
+      "type": "single",
+      "prompt": "Which test is most exposed to interference between customers?",
+      "options": [
+        "A larger font on the menu page",
+        "A new order-tracking animation",
+        "A new icon for the favourites list",
+        "A courier bonus that changes which orders couriers accept"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "Couriers serve both arms; changing their behaviour for treated orders changes service for control orders.",
+      "misconceptions": [
+        "A personal display change affects nobody else",
+        "Changes what one customer sees, not a shared resource",
+        "A purely visual change affects only the viewer",
+        ""
+      ],
+      "lo": [
+        "LO5"
+      ],
+      "day": "day3",
+      "session": 3,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "switchback-unit",
+      "type": "single",
+      "prompt": "A switchback randomised 1,200 city-hour blocks. How should the standard error of the effect be computed?",
+      "options": [
+        "It cannot be computed; switchbacks need a Bayesian analysis",
+        "Over the orders in all blocks, as independent rows",
+        "Over the blocks, the unit that was randomised",
+        "Over the six cities only"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "The unit of analysis matches the unit of randomisation: the block.",
+      "misconceptions": [
+        "Thinks the design rules out a frequentist interval",
+        "Treats orders as the randomised unit, which understates the variance",
+        "",
+        "Uses a coarser unit than the one randomised and wastes the design"
+      ],
+      "lo": [
+        "LO5"
+      ],
+      "day": "day3",
+      "session": 4,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "switchback-cost",
+      "type": "single",
+      "prompt": "What does a city-by-hour switchback give up in exchange for removing interference between customers?",
+      "options": [
+        "Nothing: it is better in every way",
+        "Power, because there are far fewer randomised units and they vary a lot",
+        "Validity, because cities differ",
+        "The ability to measure delivery time"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "A switchback has hundreds or thousands of blocks in place of hundreds of thousands of customers, so it needs more time for the same power.",
+      "misconceptions": [
+        "Overlooks the loss of power from far fewer, noisier units",
+        "",
+        "Fixed effects and randomisation within city handle city differences",
+        "Confuses the design with what can be measured"
+      ],
+      "lo": [
+        "LO5"
+      ],
+      "day": "day3",
+      "session": 4,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "carryover-check",
+      "type": "single",
+      "prompt": "How can an analyst check whether carryover between hours biases a switchback before running it?",
+      "options": [
+        "Simulate the design with and without carryover and compare the estimates",
+        "Use one-hour blocks, which have no carryover",
+        "Weight blocks by orders",
+        "Run an A/A switchback in production for a month"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "Simulating the design with the nuisance switched on and off measures its bias directly.",
+      "misconceptions": [
+        "",
+        "Gets it backwards: short blocks are where carryover matters most",
+        "Confuses the weighting question with the carryover question",
+        "Uses an expensive check that cannot see carryover of a real effect"
+      ],
+      "lo": [
+        "LO5"
+      ],
+      "day": "day3",
+      "session": 4,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
     }
   ]
 }
