@@ -3,135 +3,56 @@
   "version": 1,
   "questions": [
     {
-      "id": "q-example-1",
+      "id": "trigger-population",
       "type": "single",
-      "prompt": "REPLACE: a practice question on LO1, as a short scenario",
+      "prompt": "A test of a new filter on the restaurant list assigns 120,000 customers; 30,000 open the filter panel, which is logged in both arms. Which population gives the most precise unbiased estimate of the filter's effect?",
       "options": [
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: the right answer",
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: a wrong option that a common misconception makes tempting"
+        "Everyone assigned, because the sample is four times larger",
+        "Customers who opened the panel, in both arms",
+        "Treatment customers who opened the panel against all control customers",
+        "Customers who used the filter at least once, in treatment only"
       ],
       "correct": [
         1
       ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
+      "explanation": "The same trigger rule in both arms keeps the randomised comparison and leaves out customers the change could not reach.",
       "misconceptions": [
-        "REPLACE: the misconception behind this option",
+        "Thinks more rows always mean more precision; the 90,000 who never open the panel add noise and no effect",
         "",
-        "REPLACE: the misconception behind this option",
-        "REPLACE: the misconception behind this option"
-      ],
-      "lo": [
-        "LO1"
-      ],
-      "day": "day1",
-      "session": 1,
-      "level": "apply",
-      "pool": "practice",
-      "weight": 1
-    },
-    {
-      "id": "q-example-2",
-      "type": "tf",
-      "prompt": "REPLACE: a statement on LO2 that is true",
-      "options": [
-        "True",
-        "False"
-      ],
-      "correct": [
-        0
-      ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
-      "misconceptions": [
-        "",
-        "REPLACE: the misconception behind this option"
-      ],
-      "lo": [
-        "LO2"
-      ],
-      "day": "day1",
-      "session": 1,
-      "level": "understand",
-      "pool": "practice",
-      "weight": 1
-    },
-    {
-      "id": "q-example-3",
-      "type": "single",
-      "prompt": "REPLACE: a practice question on LO3, as a short scenario",
-      "options": [
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: the right answer",
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: a wrong option that a common misconception makes tempting"
-      ],
-      "correct": [
-        1
-      ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
-      "misconceptions": [
-        "REPLACE: the misconception behind this option",
-        "",
-        "REPLACE: the misconception behind this option",
-        "REPLACE: the misconception behind this option"
-      ],
-      "lo": [
-        "LO3"
-      ],
-      "day": "day1",
-      "session": 1,
-      "level": "apply",
-      "pool": "practice",
-      "weight": 1
-    },
-    {
-      "id": "q-example-4",
-      "type": "tf",
-      "prompt": "REPLACE: a statement on LO4 that is true",
-      "options": [
-        "True",
-        "False"
-      ],
-      "correct": [
-        0
-      ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
-      "misconceptions": [
-        "",
-        "REPLACE: the misconception behind this option"
+        "Cuts only one arm, so the comparison is between different kinds of customers",
+        "Conditions on a behaviour the treatment causes and drops the control group"
       ],
       "lo": [
         "LO4"
       ],
       "day": "day1",
       "session": 1,
-      "level": "understand",
+      "level": "apply",
       "pool": "practice",
       "weight": 1
     },
     {
-      "id": "q-example-5",
+      "id": "dilution-arithmetic",
       "type": "single",
-      "prompt": "REPLACE: a practice question on LO5, as a short scenario",
+      "prompt": "A test triggers 25% of assigned customers and shows a 6% lift among them, with similar baselines in both groups. Roughly what lift should the analysis over everyone assigned show?",
       "options": [
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: the right answer",
-        "REPLACE: a wrong option that a common misconception makes tempting",
-        "REPLACE: a wrong option that a common misconception makes tempting"
+        "1.5%",
+        "Nothing can be said without rerunning the test",
+        "6%, because the effect is a property of the change",
+        "24%, the triggered lift divided by the trigger rate"
       ],
       "correct": [
-        1
+        0
       ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
+      "explanation": "The overall effect is the triggered effect times the share triggered: 6% x 0.25 = 1.5%.",
       "misconceptions": [
-        "REPLACE: the misconception behind this option",
         "",
-        "REPLACE: the misconception behind this option",
-        "REPLACE: the misconception behind this option"
+        "Does not see that dilution is arithmetic when baselines are similar",
+        "Forgets that untriggered customers contribute zero effect to the average",
+        "Applies the dilution in the wrong direction"
       ],
       "lo": [
-        "LO5"
+        "LO4"
       ],
       "day": "day1",
       "session": 1,
@@ -140,26 +61,204 @@
       "weight": 1
     },
     {
-      "id": "q-example-6",
-      "type": "tf",
-      "prompt": "REPLACE: a statement on LO6 that is true",
+      "id": "srm-response",
+      "type": "single",
+      "prompt": "A 50/50 test shows a 2.5% lift with p = 0.01. Its sample ratio check gives p = 0.0002; the treatment arm is short of users on one browser. What should the analyst report?",
       "options": [
-        "True",
-        "False"
+        "The lift, after reweighting the arms to 50/50",
+        "The lift, with a note on the mismatch",
+        "The lift computed on the other browsers only",
+        "No result until the cause is fixed and the test rerun"
       ],
       "correct": [
-        0
+        3
       ],
-      "explanation": "REPLACE: why the right answer is right, in one sentence",
+      "explanation": "A sample ratio mismatch means assignment did not work as planned, so the outcome comparison cannot be trusted.",
       "misconceptions": [
-        "",
-        "REPLACE: the misconception behind this option"
+        "Believes weights can restore what randomisation lost",
+        "Treats a broken split as a minor caveat, when the missing users can create the lift",
+        "Assumes the loss is confined to one browser and that the rest stays randomised, which nobody has shown",
+        ""
       ],
       "lo": [
         "LO6"
       ],
       "day": "day1",
-      "session": 1,
+      "session": 2,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "aa-rate-meaning",
+      "type": "single",
+      "prompt": "Five hundred A/A reshuffles of last month's data, analysed with the team's standard test, give 11% of p-values below 0.05. What is the most likely explanation?",
+      "options": [
+        "A/A tests always show more false wins than 5%",
+        "Last month had unusual traffic",
+        "The analysis is miscalibrated, for example tested at a smaller unit than the one randomised",
+        "Five hundred reshuffles are too few to say anything"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "A correct analysis gives about 5% false wins on A/A splits; a much higher rate means its variance is underestimated, often because the unit of analysis is wrong.",
+      "misconceptions": [
+        "Thinks false-win inflation is a property of A/A tests rather than of the analysis",
+        "Confuses the data with the procedure: reshuffles of any month should give about 5%",
+        "",
+        "Overlooks that 11% is far outside the 5% band for 500 reshuffles (about plus or minus 2 points)"
+      ],
+      "lo": [
+        "LO6"
+      ],
+      "day": "day1",
+      "session": 2,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "guardrail-role",
+      "type": "single",
+      "prompt": "A pre-registered test of an AI search ranking has orders per customer as primary and a latency guardrail of at most +300 ms at p95. Results: orders +3% (interval above zero), p95 latency +410 ms. What follows?",
+      "options": [
+        "Launch, and raise the latency limit for the next test",
+        "Not a launch as is: apply the written decision rule for a failed guardrail",
+        "Rerun the test with latency as the primary metric",
+        "Launch, since the primary metric won"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "A guardrail is a limit written before the test; when it fails, the pre-registered rule decides, whatever the primary shows.",
+      "misconceptions": [
+        "Moves a threshold after seeing the data",
+        "",
+        "Confuses a guardrail with a goal",
+        "Treats guardrails as advisory, which defeats writing them in advance"
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day1",
+      "session": 3,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "harm-guardrail-interval",
+      "type": "single",
+      "prompt": "A harm guardrail says complaints per 1,000 orders must not rise by more than 1.0. The estimate is +0.3 with a 95% interval from -0.5 to +1.4. Does the guardrail hold?",
+      "options": [
+        "No, because the upper bound exceeds 1.0",
+        "No, because any rise in complaints fails a harm guardrail",
+        "Yes, because the estimate is below 1.0",
+        "Yes, because the difference is not statistically significant"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "A harm guardrail holds only when the interval rules out a rise beyond the margin; an upper bound of 1.4 does not.",
+      "misconceptions": [
+        "",
+        "Ignores the margin the guardrail states",
+        "Reads the point estimate where a non-inferiority guardrail needs the interval",
+        "Treats \"no evidence of harm\" as evidence of no harm"
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day1",
+      "session": 3,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "purpose-limitation-field",
+      "type": "single",
+      "prompt": "A test analysis needs the number of complaints per order. The data team offers the complaint category and the full complaint text, both collected for customer support and product improvement. Which should the analysis use?",
+      "options": [
+        "Neither, because complaints are personal data",
+        "Both, because more detail gives a better metric",
+        "The text only, because categories can be wrong",
+        "The category only"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "The category carries what the metric needs; reading the free text would exceed the minimum necessary for the purpose.",
+      "misconceptions": [
+        "Thinks personal data can never be used, when the law allows use for the purpose collected and within the minimum necessary",
+        "Ignores that the content must be limited to what the purpose needs",
+        "Picks the more identifying field for a count the category already gives",
+        ""
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day1",
+      "session": 3,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "power-quadruple",
+      "type": "single",
+      "prompt": "A test needs 30,000 customers per arm to detect a 3% lift with 80% power. How many per arm are needed to detect a 1.5% lift with the same power?",
+      "options": [
+        "60,000",
+        "42,000",
+        "120,000",
+        "15,000"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "Sample size grows with one over the effect squared: half the effect needs four times the customers.",
+      "misconceptions": [
+        "Scales the sample size linearly with precision",
+        "Scales by the square root of two",
+        "",
+        "Thinks a smaller effect needs fewer customers"
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day1",
+      "session": 4,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "power-simulation-why",
+      "type": "single",
+      "prompt": "Why size a test by simulation on historical data when a formula exists?",
+      "options": [
+        "The formula is only valid for proportions",
+        "Simulation uses the metric's real distribution and the exact analysis that will be run",
+        "Simulation always gives a smaller sample size",
+        "The formula needs the effect size, which simulation does not"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "Simulation keeps the real tail and any analysis choice (triggering, capping, sequential looks) that a closed formula may not describe.",
+      "misconceptions": [
+        "Thinks the two-sample formula does not cover means",
+        "",
+        "Expects simulation to be more optimistic, when it can go either way",
+        "Overlooks that a simulation also needs the effect it injects"
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day1",
+      "session": 4,
       "level": "understand",
       "pool": "practice",
       "weight": 1

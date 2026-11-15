@@ -1,0 +1,1 @@
+"\n    select a.customer_id, a.variant, f.exposed_day\n    from assignments a\n    left join (select customer_id, min(day) as exposed_day\n               from searches where day >= 0 group by customer_id) f\n      on f.customer_id = a.customer_id\n    "

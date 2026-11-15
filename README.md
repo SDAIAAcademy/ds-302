@@ -39,7 +39,19 @@ Participants run the statistics behind an experimentation programme that include
 
 ## Case study
 
-**REPLACE: the name of the fictional organisation every lab works on.** REPLACE: two sentences on the case study and its synthetic data
+**Sufrah** (سفرة) is a fictional food-delivery marketplace in six Saudi cities whose experimentation programme now tests AI features: AI-ranked search (test T-101) and Luqma (لُقمة), an in-app chat assistant (test T-401). Rawan Al-Mubarak chairs the review board, Yazeed Al-Hamdan owns search, Joud Al-Fahad runs the couriers, Waleed Al-Sharif is the data protection officer, and the participant works as Ruba Kamal, the analyst.
+
+All data is synthetic and deterministic. `labs/sufrah.py` generates, with fixed seeds, 200,000 customers with 28 pre-period and 28 test days (about two million orders, searches and sessions), the Luqma test, a daily-peeking simulator and a marketplace simulator in which couriers are shared by treated and control customers. `labs/prepare_data.py` writes the small files the labs read: three tests with assignment logs, a data inventory, the pre-registration of T-101, twenty segment results and five experiment write-ups with seeded faults. No real person, customer or company is represented.
+
+## How the course runs
+
+Four teaching days of four sessions, then a capstone day. Each session is about 50 minutes: 20 to 25 minutes of ideas and demonstration, a checkpoint, then a 25-minute lab in a notebook that starts from a supplied reference state. No lab depends on another.
+
+- **Pre-work** (two hours): power and the two-sample test, with an entry quiz. The practice page of the course site holds the questions; DS-201 and DS-205 cover the ground.
+- **Assessment**: AI-off entry and exit checks on power, intervals and trust problems (20%); the capstone rubric (60%); the review-board defence (20%). Passing needs 70% overall and at least 60% on both the capstone rubric and the supervised check.
+- **AI use**: no AI help in the supervised checks and in the first attempt at power and interval calculations (Labs 1.4, 2.2, 2.3 and 2.4 say so); an assistant as a tutor in the other labs, hinting without writing the analysis; full use in the capstone, which is defended live.
+- **Follow-up**: review one experiment from your workplace or a public write-up against the review checklist of Lab 4.4.
+- **Responsible use**: experiments are run on people. Harm guardrails (complaints, wrong-information complaints, courier earnings) sit beside business metrics, the board stops a test whose harm guardrail worsens, and Lab 1.3 decides which event data a test may use under purpose limitation.
 
 <!-- academy:labs -->
 ## Labs
@@ -70,7 +82,15 @@ Every lab is a notebook in `labs/`. Open it in Google Colab from the course page
 
 A design and analysis pack for an AI-feature change (pre-registration, sequential plan, guardrails, variance-reduced analysis, launch recommendation) in a public repository, defended in a ten-minute review-board session
 
-**Submission:** REPLACE: what participants submit and how: a public repository link, or a shared folder for a course without code
+**Submission:** a link to a public GitHub repository with the pack: pre-registration, sequential plan, guardrails, the variance-reduced analysis that reruns from the generator, and the one-page recommendation. Each participant chooses one of three AI-feature changes in Lab 4.4; `labs/capstone/README.md` describes the pack and `sufrah.capstone_data()` generates its data. In the defence the assessor changes the traffic or the pre-period and the participant reruns the power calculation live. The defence takes ten minutes: seven to present, three for the board's questions.
+
+| Criterion | Weight |
+|---|---|
+| Design and power | 25 |
+| Analysis | 25 |
+| Monitoring and guardrails | 20 |
+| Recommendation | 20 |
+| Reproducibility | 10 |
 
 ## Prerequisites
 
@@ -122,7 +142,7 @@ Each line is a capability; the examples are interchangeable.
 
 ### National references
 
-- Personal Data Protection Law and its implementing regulations: REPLACE: the address of the official text
-- NDMO Data Classification Policy: REPLACE: the address of the official text
-- SDAIA AI Ethics Principles: REPLACE: the address of the official text
-- SDAIA Generative AI Guidelines: REPLACE: the address of the official text
+- Personal Data Protection Law and its implementing regulations: https://sdaia.gov.sa/en/SDAIA/about/Documents/PersonalDataProtectionLaw.pdf and https://sdaia.gov.sa/en/SDAIA/about/Documents/ImplementingRegulationPersonalDataProtectionLaw.pdf
+- NDMO Data Classification Policy: https://sdaia.gov.sa/en/SDAIA/about/Documents/DataClassificationPolicy.pdf
+- SDAIA AI Ethics Principles: https://sdaia.gov.sa/en/SDAIA/about/Documents/ai-principles.pdf
+- SDAIA Generative AI Guidelines: https://sdaia.gov.sa/en/SDAIA/about/Files/GenAIGuidelinesForGovernmentENCompressed.pdf (for government) and https://sdaia.gov.sa/en/SDAIA/about/Files/GenerativeAIPublicEN.pdf (for the public)

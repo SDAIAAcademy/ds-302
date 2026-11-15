@@ -1,158 +1,426 @@
 <section class="slide title" id="title" data-auto="title">
-  <aside class="notes">REPLACE: welcome; introduce yourself; one question to the room that calibrates the pace; the rhythm of the day</aside>
+  <aside class="notes"><p>Welcome the room and introduce yourself. Calibrating question: "Who has seen a test result that was later reversed?" Ask two people what went wrong; most answers will be about trust, not statistics, which is today's subject. The rhythm: four sessions, each about twenty minutes of ideas, a checkpoint, then a 25-minute lab. Press B for a break when the room needs one.</p></aside>
 </section>
 
-<section class="slide" id="agenda" data-auto="agenda"></section>
+<section class="slide" id="agenda" data-auto="agenda">
+  <aside class="notes"><p>Today is about whether a test can be trusted at all, before anyone computes a clever interval: who was assigned, who was exposed, whether the split is what was planned, which metrics decide, and how many customers the test needs.</p></aside>
+</section>
 
-<!-- Session 1 -->
+<section class="slide" id="setup-check" data-label="Setup">
+  <div class="kicker">Before the first lab</div>
+  <h2>One notebook proves your machine is ready</h2>
+  <div class="cols cols-2">
+    <div class="stack">
+      <pre class="code s" data-file="labs/"><code class="language-bash">uv sync
+uv run jupyter lab
+# then run 00_setup_check.ipynb</code></pre>
+      <p class="small">In Colab, open the notebook from the course page: its first cell clones the repository and installs the libraries.</p>
+    </div>
+    <ul class="bullets small">
+      <li><b>Nothing to download</b>: no model, no dataset. The Sufrah data is generated on your machine with fixed seeds.</li>
+      <li><b>No key</b>: no lab calls a hosted model; the chat-assistant test of Day 4 is analysed from its logs.</li>
+      <li><b>Quick mode</b>: <code>SUFRAH_QUICK=1</code> uses 30,000 customers in place of 200,000. The slides quote full mode.</li>
+    </ul>
+  </div>
+  <aside class="notes"><p>Ask everyone to run the setup check now, while you introduce the case. It prints the library versions and generates the stream (about 15 seconds on a laptop in full mode). On Windows, if an import fails with a long path error, set UV_PROJECT_ENVIRONMENT to a short folder before uv sync; labs/README.md says how. Ask who did the pre-work quiz on power and the two-sample test: Session 4 assumes it.</p></aside>
+</section>
 
+<section class="slide" id="meet-sufrah" data-label="The case">
+  <div class="kicker">The case study</div>
+  <h2>Sufrah tests everything, and now it tests AI features</h2>
+  <div class="cols cols-3">
+    <div class="card c-teal"><h4>The marketplace</h4><p class="small mb0">A fictional food-delivery app in six Saudi cities: 200,000 active customers, restaurants, and couriers shared by everyone.</p></div>
+    <div class="card c-cyan"><h4>Two AI features</h4><p class="small mb0">AI-ranked search (test T-101) and Luqma, an in-app chat assistant (T-401). Each adds latency, cost and new ways to harm.</p></div>
+    <div class="card c-coral"><h4>The people</h4><p class="small mb0">Rawan Al-Mubarak chairs the review board. Yazeed Al-Hamdan owns search. Joud Al-Fahad runs couriers. Waleed Al-Sharif protects data. You are Ruba Kamal, the analyst.</p></div>
+  </div>
+  <p class="small mt">All data is synthetic, generated with fixed seeds: about two million orders over 28 pre-period and 28 test days.</p>
+  <aside class="notes"><p>The case runs through every lab and the capstone. Sufrah is fictional; no real company, person or customer data is involved. Point out that the generator also knows things no real test knows, such as each customer's outcome under both arms: Day 2 uses that to measure bias exactly.</p></aside>
+</section>
+
+<!-- ======================= SESSION 1 ======================= -->
 <section class="slide section" id="s1" data-auto="section" data-session="1"></section>
 
-<section class="slide" id="s1-idea" data-lo="LO4">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
-  <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
-    </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
+<section class="slide" id="three-events" data-lo="LO4" data-label="Three events">
+  <div class="kicker">Assignment is not exposure</div>
+  <h2>Every test log records three different events</h2>
+  <div class="flow">
+    <div class="step c-navy"><b>1 · Eligible</b>Active in the last 90 days: all 200,000 customers</div>
+    <div class="arrow frag" data-frag="a">→</div><div class="step c-teal frag" data-frag="a"><b>2 · Assigned</b>Day 0: a variant for each customer, 50/50</div>
+    <div class="arrow frag" data-frag="b">→</div><div class="step c-coral frag" data-frag="b"><b>3 · Exposed</b>At the first search: the only moment the ranking can matter</div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+  <div class="callout tip mt frag"><b>Triggering.</b> Analyse the customers whose exposure condition held, in both arms. The others can only add noise.</div>
+  <aside class="notes"><p>Press once per step. The trigger condition here is "searched at least once in the test period". Ask: who in this room has analysed a test over everyone assigned when only a fraction could see the change? It is the most common way a real effect disappears into noise.</p></aside>
 </section>
 
-<section class="slide" id="s1-steps" data-lo="LO4">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="counterfactual-logging" data-lo="LO4" data-label="Counterfactual logging">
+  <div class="kicker">The control group must be triggered too</div>
+  <h2>Log the trigger in control, where nothing visible happens</h2>
+  <div class="cols cols-2">
+    <div class="card c-coral flat"><h4>Wrong</h4><p class="small mb0">Triggered treatment customers compared with all control customers. The groups differ in who they are: searchers order more.</p></div>
+    <div class="card c-teal flat"><h4>Right</h4><p class="small mb0">Control logs "would have seen the AI ranking" at the same moment. Both arms are cut by the same rule, so randomisation still holds inside the cut.</p></div>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <div class="callout warn mt"><b>The trigger must not depend on the treatment.</b> A search happens before the ranking is shown, so the rule is safe. "Clicked a result" would not be.</div>
+  <aside class="notes"><p>In Lab 1.1 the trigger rates are 42.45% in control and 42.63% in treatment (chi-square p = 0.40): balanced, as they must be. If a feature changes who triggers (for example a trigger defined by an event the new ranking causes), the triggered comparison is biased and you must fall back to the assigned population.</p></aside>
+</section>
+
+<section class="slide" id="exposure-sql" data-lo="LO4" data-label="In SQL">
+  <div class="kicker">Lab 1.1, step 2</div>
+  <h2>Exposure is one left join and a minimum</h2>
+  <pre class="code s" data-file="exposure.sql"><code class="language-sql">select a.customer_id, a.variant, f.exposed_day
+from assignments a
+left join (select customer_id, min(day) as exposed_day
+           from searches where day &gt;= 0
+           group by customer_id) f
+  on f.customer_id = a.customer_id</code></pre>
+  <ul class="bullets small mt-s">
+    <li><b>Left join</b>: a customer who never searched stays, with a NULL exposure day.</li>
+    <li>The same pattern counts orders per customer: <code>coalesce(o.orders, 0)</code> keeps the customers who did not order.</li>
+  </ul>
+  <aside class="notes"><p>The commonest bug in this lab is an inner join to orders, which silently drops every customer with zero orders and inflates both means. Ask the room what that does to the difference: it changes the population, so it is no longer a randomised comparison. DuckDB runs the queries directly on the pandas tables; PostgreSQL would run the same SQL.</p></aside>
+</section>
+
+<section class="slide" id="diluted-vs-triggered" data-lo="LO4" data-label="Two effects">
+  <div class="kicker">Measured in Lab 1.1, full mode</div>
+  <h2>The triggered lift is nearly twice the diluted one</h2>
+  <table class="t">
+    <tr><th>Population</th><th class="num">Customers</th><th class="num">Orders per customer, difference</th><th class="num">95% interval</th><th class="num">Relative</th></tr>
+    <tr><td>All assigned (diluted)</td><td class="num">200,000</td><td class="num">+0.104</td><td class="num">+0.049 to +0.159</td><td class="num">+2.0%</td></tr>
+    <tr class="hl"><td>Triggered</td><td class="num">85,080</td><td class="num">+0.253</td><td class="num">+0.163 to +0.343</td><td class="num">+3.9%</td></tr>
+  </table>
+  <div class="callout tip mt"><b>Dilution.</b> Overall difference ≈ triggered difference × trigger rate: 0.253 × 0.425 = 0.108, against 0.104 measured.</div>
+  <aside class="notes"><p>Numbers from the solution run of Lab 1.1 in full mode; quick mode shows the same pattern with wider intervals. The triggered estimate is 5.5 standard errors from zero, the diluted one 3.7. Report the triggered effect for the decision about search, and the diluted one when someone asks what it does for the whole business.</p></aside>
+</section>
+
+<section class="slide" id="dilution-formula" data-lo="LO4" data-label="Dilution">
+  <div class="kicker">Why dilution costs power</div>
+  <h2>Untriggered customers add variance and no signal</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li>The effect shrinks by the trigger rate, here 0.425.</li>
+      <li>The noise does not shrink: 57% of the customers still vary.</li>
+      <li>Dividing the effect by 0.425 multiplies the customers needed by 1 / 0.425² ≈ 5.5; the assigned population is only 1 / 0.425 ≈ 2.4 times the triggered one.</li>
+    </ul>
+    <div class="stat"><div class="big">5.5 vs 3.7</div><div class="lbl">standard errors from zero: triggered against diluted (Lab 1.1)</div></div>
+  </div>
+  <aside class="notes"><p>The rough rule assumes similar variance in both groups; here the searchers order more and vary more, which is why the gain in z is smaller than the rule suggests. The exact comparison is the two z values on the slide.</p></aside>
+</section>
+
+<section class="slide" id="check-trigger" data-lo="LO4">
+  <div class="kicker">Checkpoint</div>
+  <h2>Which comparison estimates the effect of AI ranking?</h2>
+  <div class="quiz" data-type="single" data-lo="LO4">
+    <p class="lead">T-101 assigned 200,000 customers; 85,080 searched. You want the effect of the new ranking on the people it can reach. Which comparison do you report?</p>
+    <div class="opts">
+      <div class="opt" data-why="Treats the trigger as a property of treatment only: the two groups then differ in who they are, not only in the ranking">Treatment customers who searched against all control customers</div>
+      <div class="opt" data-ok>Customers who searched in treatment against customers who searched in control</div>
+      <div class="opt" data-why="Assumes more data is always better: the untriggered customers add noise and no effect">All treatment customers against all control customers, because it uses more data</div>
+      <div class="opt" data-why="Confuses exposure with assignment: the timing of the first search is not randomised, so before and after is not a controlled comparison">Each searcher's orders before and after the first search</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> The same trigger rule in both arms keeps randomisation intact inside the triggered group, and leaves out customers the ranking could not affect.</div>
+  </div>
+  <aside class="notes"><p>Answer: B. If many pick C, return to the dilution slide: C is unbiased for a different question and has less power. If many pick A, return to counterfactual logging.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-1-1" data-auto="lab" data-lab="1.1">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-tutor lab: an assistant may explain SQL, not write the queries. Walk the room for the inner-join bug (counts of customers per arm fall below 100,000 in step 3) and for a query that counts pre-period orders (no filter on day). The stretch: orders after exposure only lower the control mean because the days before exposure are left out in both arms; the difference barely moves.</p></aside>
 </section>
 
-<!-- Session 2 -->
-
+<!-- ======================= SESSION 2 ======================= -->
 <section class="slide section" id="s2" data-auto="section" data-session="2"></section>
 
-<section class="slide" id="s2-idea" data-lo="LO6">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
+<section class="slide" id="srm-what" data-lo="LO6" data-label="Sample ratio">
+  <div class="kicker">The first check on every test</div>
+  <h2>A split that differs from its plan voids the result</h2>
   <div class="cols cols-2">
     <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
+      <li>Planned 50/50; observed 50,221 control and 49,028 treatment in T-203.</li>
+      <li>A chi-square test against the plan: p = 0.00015.</li>
+      <li>The users who went missing were not missing at random, so the remaining arms are no longer comparable.</li>
     </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
+    <div class="stat"><div class="big">49.4%</div><div class="lbl">treatment share in T-203: small to the eye, decisive to the test</div></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+  <div class="callout warn mt"><b>Never read the metrics of a test that fails this check.</b> Find the cause first.</div>
+  <aside class="notes"><p>Numbers from Lab 1.2 (data/srm_tests.csv). Platforms commonly flag a split at p below 0.001; the threshold is strict because the check runs on every test, often every day. The lift of a test with a mismatch may be produced entirely by who was lost.</p></aside>
 </section>
 
-<section class="slide" id="s2-steps" data-lo="LO6">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="srm-causes" data-lo="LO6" data-label="Causes">
+  <div class="kicker">Where mismatches come from</div>
+  <h2>Most mismatches come from what happens after assignment</h2>
+  <div class="cols cols-3">
+    <div class="card c-coral"><h4>Lost</h4><p class="small mb0">The treatment crashes or loads slower on one build, so its users never log an exposure.</p></div>
+    <div class="card c-amber"><h4>Filtered</h4><p class="small mb0">A bot filter or a data-quality rule removes more users from one arm.</p></div>
+    <div class="card c-purple"><h4>Redirected</h4><p class="small mb0">A treatment that redirects or reloads assigns some users twice or not at all.</p></div>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <p class="small mt">Diagnose by splitting the counts by every dimension that could lose users unevenly: platform, build, day, browser.</p>
+  <aside class="notes"><p>In Lab 1.2 the split by app build shows the cause at once: build 7.4 has a treatment share of 46.4% (p far below 0.001) while every other build is near 50%. The split by day shows a treatment share below 50% on 11 of 14 days, which points to a permanent cause, not an outage.</p></aside>
+</section>
+
+<section class="slide" id="srm-by-build" data-lo="LO6" data-label="By build">
+  <div class="kicker">Lab 1.2, step 3</div>
+  <h2>One Android build loses one treatment user in seven</h2>
+  <div class="bars">
+    <div class="row"><span>iOS 17.2</span><div class="bar c-teal" style="--w:50.3%"></div><span class="val">50.3%</span></div>
+    <div class="row"><span>iOS 17.3</span><div class="bar c-teal" style="--w:50.1%"></div><span class="val">50.1%</span></div>
+    <div class="row"><span>Android 7.3</span><div class="bar c-teal" style="--w:50.6%"></div><span class="val">50.6%</span></div>
+    <div class="row"><span>Android 7.4</span><div class="bar c-coral" style="--w:46.4%"></div><span class="val">46.4%</span></div>
+    <div class="row"><span>Web</span><div class="bar c-teal" style="--w:49.3%"></div><span class="val">49.3%</span></div>
+  </div>
+  <p class="small mt">Treatment share of T-203 users by app build, 14 days.</p>
+  <aside class="notes"><p>The bars are the treatment shares from the solution run. The planted cause: the new checkout page fails on build 7.4 before the exposure is logged, so 14% of that build's treatment users disappear. The fix is engineering, then a rerun; no reweighting rescues the original test.</p></aside>
+</section>
+
+<section class="slide" id="aa-tests" data-lo="LO6" data-label="A/A tests">
+  <div class="kicker">A/A tests</div>
+  <h2>Reshuffle real data to measure the false-win rate you really have</h2>
+  <div class="cols cols-2">
+    <ol class="bullets small">
+      <li>Take 28 days of pre-period revenue per customer.</li>
+      <li>Split the customers at random into two halves.</li>
+      <li>Run the analysis you plan to use. Record p.</li>
+      <li>Repeat 500 times. Count p below 0.05.</li>
+    </ol>
+    <div class="stack">
+      <div class="stat"><div class="big">5.8%</div><div class="lbl">false wins over 500 reshuffles (expected 5% ± 1.9)</div></div>
+      <div class="card c-teal flat"><p class="small mb0">The customer-level Welch test is calibrated on Sufrah's heavy-tailed revenue.</p></div>
+    </div>
+  </div>
+  <aside class="notes"><p>From Lab 1.2 step 4, full mode. An A/A rate well above 5% means the analysis is wrong for the data, most often because the unit of analysis is smaller than the unit of randomisation. The stretch shows it: split by customer, test at the order level, and the rate rises. Day 2 session 3 repairs it with the delta method.</p></aside>
+</section>
+
+<section class="slide" id="novelty" data-lo="LO6" data-label="Novelty">
+  <div class="kicker">A trust problem in time</div>
+  <h2>A new feature can win because it is new</h2>
+  <div class="cols cols-2">
+    <ul class="bullets">
+      <li><b>Novelty</b>: customers try the change because it is different; the lift fades.</li>
+      <li><b>Primacy</b>: customers used to the old version resist; the lift grows.</li>
+      <li>Check the effect by week since first exposure, not only in total.</li>
+    </ul>
+    <div class="card c-purple"><h4>Day 4</h4><p class="small mb0">Luqma, the chat assistant, lifts orders by 5.8% in week one and by nothing measurable in week four. Lab 4.1 measures it.</p></div>
+  </div>
+  <aside class="notes"><p>The Luqma numbers are previewed here and computed in Lab 4.1. Run long enough to see the settled effect; two full weeks is a common minimum because weekday patterns also matter. A test stopped early on a novelty lift ships a feature whose value disappears.</p></aside>
+</section>
+
+<section class="slide" id="check-srm" data-lo="LO6">
+  <div class="kicker">Checkpoint</div>
+  <h2>The result looks good, the split does not</h2>
+  <div class="quiz" data-type="single" data-lo="LO6">
+    <p class="lead">A 50/50 test shows +3% orders with p = 0.002. Its sample ratio check gives p = 0.0004: the treatment arm has 1.2% fewer users than planned. What do you do?</p>
+    <div class="opts">
+      <div class="opt" data-why="Thinks a mismatch only costs a little precision; the missing users can create the whole lift">Report the lift: the arms are large and the gap is only 1.2%</div>
+      <div class="opt" data-why="Assumes reweighting can restore randomisation; it cannot recover who was lost or why">Reweight the treatment arm up to 50% and report the adjusted lift</div>
+      <div class="opt" data-ok>Report no result, find where users are lost, fix it and rerun</div>
+      <div class="opt" data-why="Treats the sample ratio check as one more metric to correct for multiplicity, not as a test of the experiment itself">Correct both p-values for multiple testing and report what survives</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> A mismatch means assignment did not work as planned, so the arms are no longer comparable. No analysis of the outcome repairs that.</div>
+  </div>
+  <aside class="notes"><p>Answer: C. Follow-up question: where would you look first? By platform and build, then by day, then by entry point.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-1-2" data-auto="lab" data-lab="1.2">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-tutor lab. The usual mistake in step 2 is passing the shares rather than the counts to the chi-square test: p is then never small. In step 4 a participant who calls the t-test with equal_var=True still gets about 5%; the point is the reshuffle, not the variant of the test. Quick mode uses 200 reshuffles, so its band is wider.</p></aside>
 </section>
 
-<!-- Session 3 -->
-
+<!-- ======================= SESSION 3 ======================= -->
 <section class="slide section" id="s3" data-auto="section" data-session="3"></section>
 
-<section class="slide" id="s3-idea" data-lo="LO4">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
-  <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
-    </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
-  </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+<section class="slide" id="primary-vs-guardrail" data-lo="LO4" data-label="Metric roles">
+  <div class="kicker">Metric roles</div>
+  <h2>One primary metric decides; guardrails can only veto</h2>
+  <table class="t small">
+    <tr><th>Role</th><th>Question it answers</th><th>T-101 example</th></tr>
+    <tr><td><b>Primary</b></td><td>Did the change do what it is for?</td><td>Orders per triggered customer, 28 days</td></tr>
+    <tr><td><b>Guardrail</b></td><td>Did it break something we will not trade?</td><td>Search latency, model cost, complaints</td></tr>
+    <tr><td><b>Diagnostic</b></td><td>Why did it move?</td><td>Clicks on the first result, searches per session</td></tr>
+  </table>
+  <div class="callout warn mt"><b>A guardrail is not a second primary.</b> A guardrail that "improved" does not rescue a primary that did not move.</div>
+  <aside class="notes"><p>Ask the room for the primary metric of T-101 before showing the table. Revenue per customer is tempting; Lab 1.4 shows it needs about twice the traffic of orders per customer for the same 2% lift. Diagnostics explain, they never decide.</p></aside>
 </section>
 
-<section class="slide" id="s3-steps" data-lo="LO4">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="ai-adds-three" data-lo="LO4" data-label="What AI adds">
+  <div class="kicker">What an AI feature adds</div>
+  <h2>A model call adds latency, cost and new harms</h2>
+  <div class="cols cols-3">
+    <div class="card c-cyan"><h4>Latency</h4><p class="small mb0">Every search waits for the model. Measure the tail: p95, not the mean.</p></div>
+    <div class="card c-amber"><h4>Cost</h4><p class="small mb0">A price per call, paid on every search, forever. Measure per 1,000 searches.</p></div>
+    <div class="card c-coral"><h4>Harm</h4><p class="small mb0">Wrong or unavailable items ranked first, unsafe answers, unfair exposure. Measure complaints and flags.</p></div>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <p class="small mt">The SDAIA Generative AI Guidelines ask that the risks of a generative feature be assessed and monitored; a harm guardrail is how a test does it.</p>
+  <aside class="notes"><p>The keyword ranking costs almost nothing per search; the AI ranking costs about SAR 5.8 per 1,000 searches in the ramp. Over a year of searches that is a number finance will ask about. Sources: SDAIA Generative AI Guidelines for Government and for the Public (course sources).</p></aside>
+</section>
+
+<section class="slide" id="ramp-baselines" data-lo="LO4" data-label="Ramp">
+  <div class="kicker">Lab 1.3, step 1: the 7-day ramp</div>
+  <h2>The ramp shows latency and cost at once, not the effect</h2>
+  <table class="t">
+    <tr><th></th><th class="num">p50 latency</th><th class="num">p95 latency</th><th class="num">Cost per 1,000 searches</th></tr>
+    <tr><td>Keyword ranking</td><td class="num">379 ms</td><td class="num">676 ms</td><td class="num">SAR 0.2</td></tr>
+    <tr class="hl"><td>AI ranking</td><td class="num">543 ms</td><td class="num">1,095 ms</td><td class="num">SAR 5.8</td></tr>
+  </table>
+  <p class="small mt">5% of searches on the AI ranking for seven days: about 6,000 searches. Too few to see a 2% change in orders; plenty to see a 400 ms tail.</p>
+  <aside class="notes"><p>Numbers from the solution run of Lab 1.3, full mode. The median rises by 164 ms but the p95 by about 420 ms: the AI ranking's tail is long. Thresholds set from these baselines are defensible; thresholds set after the test are not.</p></aside>
+</section>
+
+<section class="slide" id="guardrail-spec" data-lo="LO4" data-label="Guardrails">
+  <div class="kicker">Writing a guardrail</div>
+  <h2>A guardrail is a metric, a direction and a number, written before the test</h2>
+  <pre class="code s" data-file="T101_metric_spec.json"><code class="language-json">{"metric": "search latency p95 (ms), treatment minus control",
+ "kind": "latency", "direction": "at most", "threshold": 300},
+{"metric": "inference cost per 1,000 searches (SAR)",
+ "kind": "cost", "direction": "at most", "threshold": 8.0},
+{"metric": "complaints per 1,000 orders, upper 95% bound of the difference",
+ "kind": "harm", "direction": "at most", "threshold": 1.0, "harm": true}</code></pre>
+  <div class="callout tip mt-s"><b>Harm guardrails use the interval.</b> The upper bound must stay under the line: "no evidence of harm" is not enough.</div>
+  <aside class="notes"><p>The harm guardrail is a non-inferiority test: the change passes only if the interval rules out a rise of more than one complaint per 1,000 orders. Ask why the latency threshold is on the difference and the cost threshold on the treatment level: latency is relative to what customers have now, cost is a budget.</p></aside>
+</section>
+
+<section class="slide" id="purpose-limitation" data-lo="LO4" data-label="Which data">
+  <div class="kicker">Lab 1.3, step 4</div>
+  <h2>A test may read only the data its purpose needs</h2>
+  <div class="cols cols-2">
+    <ul class="bullets small">
+      <li>The <b>Personal Data Protection Law</b> lets a controller process personal data for the purposes it was collected for, and asks that it be limited to the minimum necessary.</li>
+      <li>The <b>NDMO Data Classification Policy</b> has four levels: Top Secret, Secret, Restricted, Public. The level sets how data is protected, not whether this use is allowed.</li>
+    </ul>
+    <table class="t small">
+      <tr><th>Field</th><th>Use in T-101?</th></tr>
+      <tr><td>complaint category</td><td>yes</td></tr>
+      <tr><td>complaint text</td><td>no: the category suffices</td></tr>
+      <tr><td>exact delivery coordinates</td><td>no: city suffices</td></tr>
+      <tr><td>allergy profile</td><td>no: health data</td></tr>
+    </table>
+  </div>
+  <aside class="notes"><p>The decision in the lab follows Sufrah's privacy notice, which lists product improvement as a purpose. Waleed Al-Sharif's answer allows seven fields of twelve. Sources: Personal Data Protection Law (articles on purpose and minimum necessary content) and the NDMO Data Classification Policy, read in the official SDAIA files; see the course sources. The classification policy is written for public entities; Sufrah uses its levels as a house scheme.</p></aside>
+</section>
+
+<section class="slide" id="check-metrics" data-lo="LO4">
+  <div class="kicker">Checkpoint</div>
+  <h2>The primary wins, a guardrail fails</h2>
+  <div class="quiz" data-type="single" data-lo="LO4">
+    <p class="lead">The AI ranking lifts orders by 3.9% (interval well above zero). Its p95 latency is 420 ms worse; the pre-registered limit was 300 ms. What does the spec say?</p>
+    <div class="opts">
+      <div class="opt" data-ok>Not a launch as is: the latency guardrail fails, so the decision rule applies</div>
+      <div class="opt" data-why="Treats guardrails as weights to trade against the primary, which is what writing them in advance prevents">Launch: a 3.9% lift is worth more than 120 ms</div>
+      <div class="opt" data-why="Moves the threshold after seeing the data, which turns the guardrail into decoration">Raise the latency limit to 450 ms and launch</div>
+      <div class="opt" data-why="Confuses a guardrail with a diagnostic: latency here is a limit, not an explanation">Report latency as a side note to the primary result</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> Guardrails were written before the test so that a good primary cannot buy them off. The rule decides what follows: for T-101, iterate on latency.</div>
+  </div>
+  <aside class="notes"><p>Answer: A. This is exactly the situation of T-101 in Lab 4.3; the decision rule there says "iterate" because a non-harm guardrail failed.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-1-3" data-auto="lab" data-lab="1.3">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-tutor lab. Steps 2 and 3 have no single right answer; the checks test the structure (per customer, triggered, numeric thresholds, a harm guardrail). Step 4 has one answer: compare with the reference. Common error: allowing the search text "to measure relevance". Ask what metric it serves; the categories serve the metrics.</p></aside>
 </section>
 
-<!-- Session 4 -->
-
+<!-- ======================= SESSION 4 ======================= -->
 <section class="slide section" id="s4" data-auto="section" data-session="4"></section>
 
-<section class="slide" id="s4-idea" data-lo="LO4">
-  <div class="kicker">REPLACE: the question this slide answers</div>
-  <h2>REPLACE: one idea, stated as a sentence</h2>
+<section class="slide" id="power-recap" data-lo="LO4" data-label="Recap">
+  <div class="kicker">From the pre-work</div>
+  <h2>Sample size grows with the variance and with one over the effect squared</h2>
   <div class="cols cols-2">
-    <ul class="bullets">
-      <li>REPLACE: at most six bullets, each a complete thought</li>
-      <li>REPLACE: bold the key phrase; numbers come from the lab run, not from memory</li>
+    <pre class="code" data-file="formula"><code class="language-python">n_per_arm = 2 * (z_0.975 + z_0.80)**2 * sd**2 / delta**2
+          = 2 * 7.85 * sd**2 / delta**2</code></pre>
+    <ul class="bullets small">
+      <li>Halve the effect: four times the customers.</li>
+      <li>Halve the standard deviation: a quarter of them.</li>
+      <li>Day 2 is about the second line.</li>
     </ul>
-    <div class="card c-teal"><h4>In the case study</h4><p class="small mb0">REPLACE: tie the idea to the case study and its data</p></div>
   </div>
-  <div class="callout warn mt"><b>What goes wrong.</b> REPLACE: the failure participants will hit, and how to recognise it</div>
-  <aside class="notes">REPLACE: what to say, the demo to run, the question to ask the room, the common failure and its fix</aside>
+  <aside class="notes"><p>This recaps DS-205 and the pre-work. If the entry quiz showed gaps, spend two minutes on the meaning of power: the chance that a test with the planned size detects an effect of the planned size.</p></aside>
 </section>
 
-<section class="slide" id="s4-steps" data-lo="LO4">
-  <div class="kicker">Step by step</div>
-  <h2>REPLACE: a process, shown one step per key press</h2>
-  <div class="flow">
-    <div class="step c-teal"><b>1 · REPLACE: name</b>REPLACE: what happens first</div>
-    <div class="arrow frag" data-frag="b">→</div><div class="step c-cyan frag" data-frag="b"><b>2 · REPLACE: name</b>REPLACE: the next piece</div>
-    <div class="arrow frag" data-frag="c">→</div><div class="step c-coral frag" data-frag="c"><b>3 · REPLACE: name</b>REPLACE: the result</div>
+<section class="slide" id="heavy-tail" data-lo="LO4" data-label="The tail">
+  <div class="kicker">Lab 1.4, step 1</div>
+  <h2>Revenue per customer has a long tail of group orders</h2>
+  <div class="cols cols-3">
+    <div class="stat"><div class="big">511</div><div class="lbl">mean SAR, 28 days, customers who search</div></div>
+    <div class="stat"><div class="big">295</div><div class="lbl">median SAR</div></div>
+    <div class="stat"><div class="big">9.4%</div><div class="lbl">of revenue from the top 1% of customers</div></div>
   </div>
-  <div class="callout tip mt frag"><b>Takeaway.</b> REPLACE: the one sentence to remember</div>
-  <aside class="notes">Press once per step and say what each step adds before the next one appears. REPLACE: the example to walk through</aside>
+  <p class="small mt">Standard deviation 747 SAR, largest customer 31,104 SAR: catering and group orders, about one order in a hundred.</p>
+  <aside class="notes"><p>Numbers from the pre-period of the T-101 stream, full mode. Ask what a mean twice the median tells you before any histogram. The tail is real business, not an error: Day 2 decides whether to cap it.</p></aside>
+</section>
+
+<section class="slide" id="power-by-simulation" data-lo="LO4" data-label="Simulation">
+  <div class="kicker">Power by simulation</div>
+  <h2>Simulate the test you will run on the data you have</h2>
+  <pre class="code s" data-file="Lab 1.4 · sim_power"><code class="language-python">for _ in range(sims):
+    c = rng.choice(values, n)                  # control arm from history
+    t = rng.choice(values, n) * (1 + lift)     # treatment arm, lifted
+    hits += ttest_ind(t, c, equal_var=False).pvalue &lt; 0.05
+power = hits / sims</code></pre>
+  <ul class="bullets small mt-s">
+    <li>Keeps the real distribution, tail included.</li>
+    <li>Works for any analysis: capping, triggering, a sequential plan, a ratio metric.</li>
+  </ul>
+  <aside class="notes"><p>The multiplicative lift assumes every customer changes by the same proportion. It is a modelling choice; an additive lift or a lift concentrated in light users gives other answers, which is a good stretch question.</p></aside>
+</section>
+
+<section class="slide" id="formula-vs-sim" data-lo="LO4" data-label="Agreement">
+  <div class="kicker">Lab 1.4, full mode, 400 simulations</div>
+  <h2>At 84,000 per arm the formula and the simulation agree</h2>
+  <table class="t">
+    <tr><th class="num">Customers per arm</th><th class="num">Simulated power</th><th class="num">Formula</th></tr>
+    <tr><td class="num">20,924</td><td class="num">0.31</td><td class="num">0.29</td></tr>
+    <tr><td class="num">41,849</td><td class="num">0.57</td><td class="num">0.51</td></tr>
+    <tr class="hl"><td class="num">83,699</td><td class="num">0.77</td><td class="num">0.80</td></tr>
+    <tr><td class="num">104,623</td><td class="num">0.85</td><td class="num">0.88</td></tr>
+  </table>
+  <div class="callout warn mt-s"><b>What the formula hides.</b> Its standard deviation came from one sample. A sample that missed a few giant orders gives a sigma, and a size, that are too small.</div>
+  <aside class="notes"><p>With 400 simulations the simulated power has a standard error of about 0.02, so 0.77 against 0.80 is agreement. At these sizes the mean of tens of thousands of heavy-tailed values is close to normal. Ask the room to try the formula with the standard deviation of a 2,000-customer subsample: the answer jumps around.</p></aside>
+</section>
+
+<section class="slide" id="traffic" data-lo="LO4" data-label="Traffic">
+  <div class="kicker">Lab 1.4, step 5</div>
+  <h2>Revenue needs twice the traffic of orders for the same 2% lift</h2>
+  <div class="bars">
+    <div class="row"><span>Revenue per customer</span><div class="bar c-coral" style="--w:100%"></div><span class="val">83,699 per arm, about 55 days</span></div>
+    <div class="row"><span>Orders per customer</span><div class="bar c-teal" style="--w:50%"></div><span class="val">41,480 per arm, about 27 days</span></div>
+  </div>
+  <div class="callout tip mt"><b>So T-101 runs 28 days on orders per triggered customer.</b> Revenue becomes a guardrail with a one-sided limit.</div>
+  <aside class="notes"><p>Days are computed from the average arrival of triggered customers (85,080 in 28 days), which is optimistic: most of the people who will ever search do so in the first days. Plan whole weeks. Day 2 shows how pre-period data would cut the revenue requirement sharply.</p></aside>
+</section>
+
+<section class="slide" id="check-power" data-lo="LO4">
+  <div class="kicker">Checkpoint</div>
+  <h2>How many customers for a smaller effect?</h2>
+  <div class="quiz" data-type="single" data-lo="LO4">
+    <p class="lead">A test needs 41,000 customers per arm to detect a 2% lift in orders with 80% power. The product manager now wants to detect 1%. Roughly how many per arm?</p>
+    <div class="opts">
+      <div class="opt" data-why="Assumes sample size grows in proportion to precision, when it grows with its square">82,000</div>
+      <div class="opt" data-why="Applies the square root the wrong way round">58,000</div>
+      <div class="opt" data-why="Confuses halving the effect with halving the power">20,500</div>
+      <div class="opt" data-ok>164,000</div>
+    </div>
+    <div class="callout tip why"><b>Why.</b> The sample size grows with one over the effect squared: half the effect needs four times the customers.</div>
+  </div>
+  <aside class="notes"><p>Answer: D. Then ask whether Sufrah has 328,000 triggered customers in four weeks. It does not; the answer is a longer test, a less noisy metric, or Day 2's methods.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-1-4" data-auto="lab" data-lab="1.4">
-  <aside class="notes">REPLACE: what to watch for while participants work, the typical problems, and the fallback for anyone who did not finish an earlier lab</aside>
+  <aside class="notes"><p>AI-off for the first attempt: participants write the formula and the simulation loop themselves, then may ask an assistant to review. Full mode takes about 25 seconds; quick mode about 12. A frequent error is applying the lift to both arms, which gives a power of 5%.</p></aside>
 </section>
 
-<section class="slide" id="wrap-up">
-  <div class="kicker">Day 1 · wrap-up</div>
+<section class="slide" id="wrap-up" data-label="Wrap-up">
+  <div class="kicker">Day 1</div>
   <h2>Three things to keep</h2>
   <div class="cols cols-3">
-    <div class="card c-teal"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
-    <div class="card c-coral"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
-    <div class="card c-purple"><h4>Remember</h4><p class="small mb0">REPLACE: one idea participants keep</p></div>
+    <div class="card c-teal"><h4>Trigger, in both arms</h4><p class="small mb0">Analyse who could be affected, with the same rule in control.</p></div>
+    <div class="card c-coral"><h4>Check the split first</h4><p class="small mb0">A sample ratio mismatch voids the test; find the cause before any metric.</p></div>
+    <div class="card c-navy"><h4>Write the limits first</h4><p class="small mb0">A primary, guardrails with numbers, and a size from simulation, all before the test.</p></div>
   </div>
+  <aside class="notes"><p>Ask each participant for one sentence on what they would check first in their own team's last test.</p></aside>
 </section>
 
 <section class="slide dark" id="next" data-label="Next">
-  <div class="kicker">Next</div>
-  <h2>Day 2: Precision</h2>
-  <p class="lead">REPLACE: what participants prepare before then; unfinished labs can be finished at home</p>
-  <aside class="notes">REPLACE: accounts, installs or reading participants need before the next unit</aside>
+  <div class="kicker">Day 2</div>
+  <h2>Next: the same test, a narrower interval</h2>
+  <ul class="bullets">
+    <li>Capping the tail, and what it changes in the estimate</li>
+    <li>Pre-period data that removes most of the noise</li>
+    <li>Intervals for ratio metrics that respect the customer</li>
+  </ul>
+  <aside class="notes"><p>Nothing to prepare beyond keeping the environment working. Labs start from the generated stream, so nobody needs today's outputs.</p></aside>
 </section>

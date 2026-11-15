@@ -1,0 +1,5 @@
+{
+ "test": "T-203",
+ "build": "7.4",
+ "cause": "Treatment users on Android build 7.4 are lost before they are logged, most likely because the new checkout page fails on that build; do not read the result, fix the build and rerun."
+}

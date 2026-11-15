@@ -1,0 +1,7 @@
+{
+ "name": "orders per customer",
+ "unit": "customer",
+ "population": "triggered: searched at least once",
+ "window_days": 28,
+ "why": "Orders are what the ranking is meant to change, and orders per customer is far less noisy than revenue per customer, which group orders dominate."
+}

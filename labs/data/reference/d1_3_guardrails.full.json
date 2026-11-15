@@ -1,0 +1,26 @@
+[
+ {
+  "metric": "search latency p95 (ms), treatment minus control",
+  "kind": "latency",
+  "threshold": 300,
+  "direction": "at most",
+  "harm": false,
+  "why": "Ramp shows about +400 ms at p95; the app's own budget for a search screen is +300 ms"
+ },
+ {
+  "metric": "inference cost per 1,000 searches (SAR), treatment",
+  "kind": "cost",
+  "threshold": 8.0,
+  "direction": "at most",
+  "harm": false,
+  "why": "Ramp shows about 5.8; 8 leaves room for longer queries"
+ },
+ {
+  "metric": "complaints per 1,000 orders, upper 95% bound of the difference",
+  "kind": "harm",
+  "threshold": 1.0,
+  "direction": "at most",
+  "harm": true,
+  "why": "Baseline is about 4.5 per 1,000 orders; a rise above 1 would be a fifth more complaints"
+ }
+]

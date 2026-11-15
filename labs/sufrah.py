@@ -22,6 +22,16 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+import sys
+for _s in (sys.stdout, sys.stderr):   # Windows consoles: print the check marks
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+pd.set_option("display.width", 160)
+pd.set_option("display.max_columns", 20)
+
 LABS = Path(__file__).resolve().parent
 DATA = LABS / "data"
 REF = DATA / "reference"
@@ -121,6 +131,8 @@ def style():
         get_ipython()  # noqa: F821  (inside a notebook: keep its backend)
     except NameError:
         matplotlib.use("Agg")       # run as a script: draw to nothing
+        import warnings
+        warnings.filterwarnings("ignore", message=".*non-interactive.*")
     import matplotlib.pyplot as plt
     plt.rcParams.update({"figure.figsize": (8, 3.6), "axes.spines.top": False, "axes.spines.right": False,
                          "axes.grid": True, "grid.alpha": 0.3, "font.size": 10})
@@ -132,7 +144,7 @@ def sql(query: str, tables: dict | None = None) -> pd.DataFrame:
     import duckdb
     con = duckdb.connect()
     for name, frame in (tables if tables is not None else stream()).items():
-        if isinstance(frame, pd.DataFrame):
+        if isinstance(frame, pd.DataFrame) and not name.startswith("_"):
             con.register(name, frame)
     out = con.execute(query).df()
     con.close()
