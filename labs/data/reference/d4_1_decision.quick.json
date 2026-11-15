@@ -1,0 +1,4 @@
+{
+ "decision": "stop",
+ "reason": "Wrong ingredient or allergen complaints rose from 1.17 to 1.95 per 1,000 orders (upper bound +1.18 against a limit of +0.30), so the harm guardrail fails and the rule says stop. The orders lift is real but fades from 6.3% in week 1 to -2.2% in week 4, so even without the harm it would not justify launch on four weeks of data."
+}

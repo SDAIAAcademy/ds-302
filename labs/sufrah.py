@@ -432,6 +432,22 @@ def luqma(n: int | None = None, seed: int = 401) -> dict:
 # The capstone: data for one AI-feature change
 # ---------------------------------------------------------------------------------------------
 
+# The simulator's truth for the capstone changes. Trainers know it; the participant-facing
+# data/capstone_changes.json does not carry it, and the capstone is assessed on the design and the defence,
+# not on recovering these numbers.
+_CAPSTONE_TRUTH = {
+    "C1": {"seed": 9101, "true_lift": 0.015,
+           "guardrails": {"latency_median_c": 220, "latency_median_t": 240, "cost_c": 0.0, "cost_t": 0.0009,
+                          "harm_c": 0.0010, "harm_t": 0.0013}},
+    "C2": {"seed": 9102, "true_lift": 0.012,
+           "guardrails": {"latency_median_c": 2100, "latency_median_t": 2600, "cost_c": 0.07, "cost_t": 0.09,
+                          "harm_c": 0.0021, "harm_t": 0.0012}},
+    "C3": {"seed": 9103, "true_lift": 0.010,
+           "guardrails": {"latency_median_c": 300, "latency_median_t": 420, "cost_c": 0.0002, "cost_t": 0.0040,
+                          "harm_c": 0.0008, "harm_t": 0.0009}},
+}
+
+
 def capstone_data(change: str, seed: int | None = None, n: int | None = None) -> dict:
     """Synthetic pre-period and test data for one of the capstone changes in data/capstone_changes.json.
 
@@ -439,7 +455,7 @@ def capstone_data(change: str, seed: int | None = None, n: int | None = None) ->
     "guardrails": per-event latency, cost and harm flags}. The assessor may change n (the traffic) or
     the pre-period in the defence: pass them here.
     """
-    spec = {c["id"]: c for c in js("capstone_changes")["changes"]}[change]
+    spec = {**{c["id"]: c for c in js("capstone_changes")["changes"]}[change], **_CAPSTONE_TRUTH[change]}
     rng = np.random.default_rng(seed if seed is not None else spec["seed"])
     n = n or pick(spec["customers"], 30_000)
     city = rng.choice(6, n, p=CITY_SHARE)

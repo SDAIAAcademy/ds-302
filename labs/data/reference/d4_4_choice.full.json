@@ -1,0 +1,12 @@
+{
+ "change": "C2",
+ "why": "Luqma's lift was real in T-401 and the harm was the reason to stop; the allergen checker is the fix, and the board will want proof that the harm is gone",
+ "primary": "orders per customer over 28 days, CUPED-adjusted with the 28 pre-period days",
+ "unit": "customer",
+ "guardrails": [
+  "Luqma p95 response time",
+  "cost per conversation",
+  "complaints per 1,000 orders"
+ ],
+ "harm_guardrail": "wrong ingredient or allergen complaints per 1,000 orders, upper 95% bound of the difference"
+}

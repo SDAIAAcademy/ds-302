@@ -871,6 +871,325 @@
       "level": "apply",
       "pool": "practice",
       "weight": 1
+    },
+    {
+      "id": "harm-upper-bound",
+      "type": "single",
+      "prompt": "An AI assistant test shows allergen complaints up by 0.1 per 1,000 orders, 95% interval -0.2 to +0.5. The pre-registered harm limit is +0.3 on the upper bound. What does the rule say?",
+      "options": [
+        "The harm guardrail holds, because the estimate is below the limit",
+        "The guardrail cannot be judged until the test ends",
+        "The harm guardrail holds, because the difference is not significant",
+        "The harm guardrail fails, because the upper bound is above the limit"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "The test must show the harm is below the limit; an upper bound of +0.5 has not shown that.",
+      "misconceptions": [
+        "Judges harm on the estimate, which lets a noisy test pass",
+        "Thinks the rule needs more than the interval it was written for",
+        "Reads absence of evidence of harm as evidence of safety",
+        ""
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day4",
+      "session": 1,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "ai-guardrails",
+      "type": "single",
+      "prompt": "Which pair of guardrails does an AI chat feature need that a new button usually does not?",
+      "options": [
+        "Revenue per order and basket size",
+        "Click-through rate and page views",
+        "Response time in the tail and cost per conversation",
+        "Sample ratio and trigger rate"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "A model call is slow and paid for, so its tail latency and its cost each need a pre-registered limit.",
+      "misconceptions": [
+        "Names business metrics, not the costs a model adds",
+        "Names engagement metrics that apply to any feature",
+        "",
+        "Names trustworthiness checks every test needs"
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day4",
+      "session": 1,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "novelty-report",
+      "type": "single",
+      "prompt": "A test's weekly lifts are 5.8%, 2.5%, 0.5% and -0.5%; the four-week average is +2.1%. What should the write-up report as the long-run effect?",
+      "options": [
+        "+5.8%, the first week, because that is when customers noticed",
+        "The weekly pattern, with the last weeks as the settled effect, which is not shown to be above zero",
+        "Nothing: novelty makes the test invalid",
+        "+2.1%, the four-week average, because it uses all the data"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "When the lift fades, the last weeks estimate the settled effect; the average overstates it.",
+      "misconceptions": [
+        "Reports the novelty peak as the effect",
+        "",
+        "Thinks a fading effect breaks the test rather than changing what it shows",
+        "Averages a novelty spike into the long-run estimate"
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": "day4",
+      "session": 1,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "twenty-tests",
+      "type": "single",
+      "prompt": "A test is cut into 20 independent segments with no true effect in any. About how often does at least one segment show p below 0.05?",
+      "options": [
+        "About 64% of the time",
+        "Every time",
+        "About 25% of the time",
+        "5% of the time"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "The chance of no false win is 0.95 to the power 20, about 0.36, so at least one appears about 64% of the time.",
+      "misconceptions": [
+        "",
+        "Confuses the expected one false win with a certain one",
+        "Guesses without the 1 - 0.95^20 calculation",
+        "Treats twenty tests as one"
+      ],
+      "lo": [
+        "LO6"
+      ],
+      "day": "day4",
+      "session": 2,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "bh-vs-holm",
+      "type": "single",
+      "prompt": "An analyst explores 20 segments to find leads for follow-up tests and can accept that a few of the leads are false. Which correction fits?",
+      "options": [
+        "Holm, because it controls the false discovery rate",
+        "Bonferroni, because it is the strictest",
+        "None, because the segments are only exploratory",
+        "Benjamini-Hochberg, which controls the share of false leads among those reported"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "The false discovery rate is the right target for a list of leads; the family-wise rate suits a single costly claim.",
+      "misconceptions": [
+        "Confuses the family-wise error rate with the false discovery rate",
+        "Picks the strictest control when a share of false leads is acceptable",
+        "Forgets that uncorrected exploration produces false leads at a known high rate",
+        ""
+      ],
+      "lo": [
+        "LO6"
+      ],
+      "day": "day4",
+      "session": 2,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "segment-survivor",
+      "type": "single",
+      "prompt": "A segment survives Benjamini-Hochberg in a test whose overall result was flat. What should happen next?",
+      "options": [
+        "Discard it, because segment analysis is never valid",
+        "Launch the change for that segment only",
+        "Run a new test pre-registered on that segment",
+        "Report the overall result as a win"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "A corrected survivor is a lead worth confirming; a new pre-registered test confirms it.",
+      "misconceptions": [
+        "Treats a corrected finding as worthless instead of as a lead",
+        "Acts on a post-hoc finding without confirming it",
+        "",
+        "Lets a segment change the reading of the overall result"
+      ],
+      "lo": [
+        "LO6"
+      ],
+      "day": "day4",
+      "session": 2,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "rule-literal",
+      "type": "single",
+      "prompt": "T-101's primary interval is well above zero; the latency guardrail fails; the harm guardrail holds. The pre-registered rule says stop on harm, launch if all guardrails hold, otherwise iterate. What is the decision?",
+      "options": [
+        "Stop, because a guardrail failed",
+        "Iterate, because a non-harm guardrail failed",
+        "Extend the test until latency improves",
+        "Launch, because the lift is large"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "Applied literally, the rule gives iterate: fix latency, then confirm.",
+      "misconceptions": [
+        "Treats a non-harm guardrail as harm",
+        "",
+        "Changes the test instead of applying the rule",
+        "Overrides the written rule after seeing the result"
+      ],
+      "lo": [
+        "LO6"
+      ],
+      "day": "day4",
+      "session": 3,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "page-order",
+      "type": "single",
+      "prompt": "What comes first on a one-page recommendation to a review board?",
+      "options": [
+        "The decision and its reason",
+        "The full table of all metrics",
+        "The risks",
+        "The method and the data sources"
+      ],
+      "correct": [
+        0
+      ],
+      "explanation": "The reader decides; the page opens with the decision so each number after it can be checked against it.",
+      "misconceptions": [
+        "",
+        "Leads with detail instead of the conclusion",
+        "Puts the caveats before the claim they qualify",
+        "Puts what the reader checks later before what the reader decides"
+      ],
+      "lo": [
+        "LO6"
+      ],
+      "day": "day4",
+      "session": 3,
+      "level": "understand",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "srm-first",
+      "type": "single",
+      "prompt": "A write-up reports a clean 2.1% lift. Its users are 50,912 treatment and 49,088 control on a planned 50/50 split. What does the board decide?",
+      "options": [
+        "Stop: the feature caused customers to leave",
+        "Launch at half traffic",
+        "Launch: the interval is above zero",
+        "Iterate: the sample ratio mismatch makes the result untrustworthy until its cause is fixed"
+      ],
+      "correct": [
+        3
+      ],
+      "explanation": "A chi-square p-value of about 10^-8 says the arms differ in who is in them; every later number is suspect.",
+      "misconceptions": [
+        "Assumes a cause for the mismatch without evidence",
+        "Picks a compromise the rule does not contain",
+        "Reads the result before checking the split",
+        ""
+      ],
+      "lo": [
+        "LO6"
+      ],
+      "day": "day4",
+      "session": 4,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "peek-review",
+      "type": "single",
+      "prompt": "A write-up stopped on day 9 when the daily p-value first fell below 0.05. The pre-registered plan had a day-9 boundary of z = 3.47, and the planned day-28 analysis gives z = 0.27. What does the board decide?",
+      "options": [
+        "Launch, because p was below 0.05",
+        "Iterate, to run the test again",
+        "Stop: the planned analysis shows no effect",
+        "Launch, because day 9 was early evidence"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "No day crossed the planned boundary, and the day-28 analysis the plan called for found nothing.",
+      "misconceptions": [
+        "Applies the fixed-test threshold to a peek",
+        "Iterates on an idea the planned analysis found no effect for",
+        "",
+        "Treats an early crossing of 1.96 as stronger evidence, when it is weaker"
+      ],
+      "lo": [
+        "LO6"
+      ],
+      "day": "day4",
+      "session": 4,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
+    },
+    {
+      "id": "harm-board",
+      "type": "single",
+      "prompt": "A courier batching change cut delivery cost by 6%; courier earnings per online hour fell by 4.2% (interval -5.9% to -2.5%) against a pre-registered limit of -2%. The team recommends launch for the saving. What does the board decide?",
+      "options": [
+        "Iterate: lower the earnings limit to -5%",
+        "Stop: the harm guardrail fails",
+        "Launch in one city first",
+        "Launch: the saving is large"
+      ],
+      "correct": [
+        1
+      ],
+      "explanation": "The whole interval is below the limit; the board stops a test whose harm guardrail worsens.",
+      "misconceptions": [
+        "Moves a pre-registered limit after seeing the data",
+        "",
+        "Picks a compromise that still ships a change whose harm guardrail failed",
+        "Lets the primary metric override a harm guardrail"
+      ],
+      "lo": [
+        "LO6"
+      ],
+      "day": "day4",
+      "session": 4,
+      "level": "apply",
+      "pool": "practice",
+      "weight": 1
     }
   ]
 }

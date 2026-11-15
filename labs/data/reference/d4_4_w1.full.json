@@ -1,0 +1,7 @@
+[
+ 8.02204461373431e-09,
+ {
+  "decision": "iterate",
+  "fault": "sample ratio mismatch: 50,912 against 49,088 has a chi-square p-value of 8.0e-09; the result cannot be trusted until the cause is found and the test is rerun"
+ }
+]
