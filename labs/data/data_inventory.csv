@@ -1,0 +1,13 @@
+field,description,classification,collected_for
+customer_id,Pseudonymous customer key,Restricted,service delivery; product improvement
+city,City of the delivery address,Restricted,service delivery; product improvement
+platform,App platform and build,Public,product improvement
+order_value,Basket value in SAR,Restricted,service delivery; product improvement
+search_latency_ms,Time to show search results,Public,product improvement
+inference_cost_sar,Model cost per search,Restricted,product improvement
+complaint_category,Category of a complaint,Restricted,customer support; product improvement
+search_query_text,The words a customer typed,Restricted,service delivery
+complaint_text,Free text of a complaint,Restricted,customer support
+delivery_lat_lon,Exact delivery coordinates,Restricted,service delivery
+phone_number,Customer phone number,Restricted,service delivery
+allergy_profile,Allergies the customer declared,Secret,service delivery (health data)

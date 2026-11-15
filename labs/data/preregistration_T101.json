@@ -1,0 +1,39 @@
+{
+ "test_id": "T-101",
+ "change": "AI-ranked search results in place of the keyword ranking",
+ "decision": "Launch the AI ranking to all customers, or not",
+ "unit": "customer, randomised 50/50 on day 0",
+ "population": "triggered customers: those who searched at least once during the test",
+ "duration_days": 28,
+ "primary": {
+  "metric": "orders per triggered customer over the 28 days",
+  "mde_relative": 0.02,
+  "analysis": "difference in means with regression adjustment on the same metric over the 28 pre-period days; 95% interval"
+ },
+ "guardrails": [
+  {
+   "metric": "search latency p95 (ms), treatment minus control",
+   "threshold": 300,
+   "direction": "at most"
+  },
+  {
+   "metric": "inference cost per 1,000 searches (SAR), treatment",
+   "threshold": 8.0,
+   "direction": "at most"
+  },
+  {
+   "metric": "complaints per 1,000 orders, upper 95% bound of the difference",
+   "threshold": 1.0,
+   "direction": "at most",
+   "harm": true
+  },
+  {
+   "metric": "revenue per triggered customer, lower 95% bound of the relative difference",
+   "threshold": -0.01,
+   "direction": "at least"
+  }
+ ],
+ "decision_rule": "Launch if the primary interval is above zero and every guardrail holds. Iterate if the primary interval is above zero and a non-harm guardrail fails. Stop if the primary interval includes zero or falls below it, or if the harm guardrail fails.",
+ "owner": "Yazeed Al-Hamdan",
+ "reviewer": "Rawan Al-Mubarak"
+}

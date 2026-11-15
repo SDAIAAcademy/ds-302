@@ -1,0 +1,22 @@
+{
+ "W1": {
+  "decision": "iterate",
+  "fault": "sample ratio mismatch: 50,912 against 49,088 has a chi-square p-value far below 0.001; the result cannot be trusted until the cause is found and the test is rerun"
+ },
+ "W2": {
+  "decision": "stop",
+  "fault": "peeking: a stop on the first daily p below 0.05 is not the pre-registered test; the day-28 analysis planned in the pre-registration shows no effect"
+ },
+ "W3": {
+  "decision": "iterate",
+  "fault": "novelty decay: the lift falls from 7.1% in week 1 to 0.2% in week 4; the settled effect is not shown to be above zero, so run longer before deciding"
+ },
+ "W4": {
+  "decision": "launch",
+  "fault": "clean: trustworthy assignment, pre-registered analysis, guardrails held"
+ },
+ "W5": {
+  "decision": "stop",
+  "fault": "harm guardrail: courier earnings fell beyond the pre-registered threshold; the board stops a test whose harm guardrail worsens"
+ }
+}

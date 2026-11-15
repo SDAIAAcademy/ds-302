@@ -1,0 +1,58 @@
+{
+ "changes": [
+  {
+   "id": "C1",
+   "name": "AI-written dish descriptions",
+   "owner": "Yazeed Al-Hamdan",
+   "goal": "more orders from menus that had no description",
+   "customers": 160000,
+   "seed": 9101,
+   "true_lift": 0.015,
+   "guardrails": {
+    "latency_median_c": 220,
+    "latency_median_t": 240,
+    "cost_c": 0.0,
+    "cost_t": 0.0009,
+    "harm_c": 0.001,
+    "harm_t": 0.0013
+   },
+   "harm": "a description that names an ingredient the dish does not have"
+  },
+  {
+   "id": "C2",
+   "name": "Luqma with an allergen checker",
+   "owner": "Rawan Al-Mubarak",
+   "goal": "keep Luqma's lift without the wrong-information complaints of T-401",
+   "customers": 120000,
+   "seed": 9102,
+   "true_lift": 0.012,
+   "guardrails": {
+    "latency_median_c": 2100,
+    "latency_median_t": 2600,
+    "cost_c": 0.07,
+    "cost_t": 0.09,
+    "harm_c": 0.0021,
+    "harm_t": 0.0012
+   },
+   "harm": "a wrong ingredient or allergen answer"
+  },
+  {
+   "id": "C3",
+   "name": "AI-ranked restaurant list on the home page",
+   "owner": "Yazeed Al-Hamdan",
+   "goal": "more first orders in a session",
+   "customers": 200000,
+   "seed": 9103,
+   "true_lift": 0.01,
+   "guardrails": {
+    "latency_median_c": 300,
+    "latency_median_t": 420,
+    "cost_c": 0.0002,
+    "cost_t": 0.004,
+    "harm_c": 0.0008,
+    "harm_t": 0.0009
+   },
+   "harm": "small restaurants pushed off the first screen (share of orders to restaurants under 20 orders a day)"
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+[
+ "city",
+ "complaint_category",
+ "customer_id",
+ "inference_cost_sar",
+ "order_value",
+ "platform",
+ "search_latency_ms"
+]

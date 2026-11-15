@@ -5,7 +5,7 @@
 
 Data Science Track · SDAIA Academy · DS-302 · Level 300
 
-REPLACE: one line under the title: what participants can do after the course
+Run trustworthy online experiments, including tests of AI features, and defend a launch, iterate or stop decision with the right interval
 
 Participants run the statistics behind an experimentation programme that includes tests of AI features. On a synthetic event stream from Sufrah, a fictional food-delivery marketplace, they check tests for trust problems, analyse triggered exposure, reduce variance with pre-experiment data, compute intervals for ratio metrics, design sequential tests for daily monitoring, set guardrails for latency, cost and harm, and measure interference through shared couriers, ending on a mock review board that decides launch, iterate or stop.
 
@@ -34,7 +34,7 @@ Participants run the statistics behind an experimentation programme that include
 | Day 2 | Precision | Variance and heavy tails; Regression adjustment; Ratio metrics; Stratification | [`slides/day2.html`](slides/day2.html) |
 | Day 3 | Monitoring and interference | Group sequential designs; Always-valid tests; Interference in marketplaces; Cluster and switchback designs | [`slides/day3.html`](slides/day3.html) |
 | Day 4 | Decide and review | Testing AI features; Many segments; Writing the recommendation; The review board | [`slides/day4.html`](slides/day4.html) |
-| Capstone | Capstone project presentations |  | [`slides/capstone.html`](slides/capstone.html) |
+| Capstone | The capstone review board |  | [`slides/capstone.html`](slides/capstone.html) |
 <!-- /academy:units -->
 
 ## Case study
@@ -48,22 +48,22 @@ Every lab is a notebook in `labs/`. Open it in Google Colab from the course page
 
 | | Session | Lab | File |
 |---|---|---|---|
-| 1.1 | Day 1 · Session 1 | Trace assignment and exposure in SQL and compare the triggered effect with the diluted overall effect | [`D1_1_trace_assignment_exposure.ipynb`](labs/D1_1_trace_assignment_exposure.ipynb) |
-| 1.2 | Day 1 · Session 2 | Run A/A and sample ratio checks on three tests and name the faulty one | [`D1_2_run_sample_ratio.ipynb`](labs/D1_2_run_sample_ratio.ipynb) |
-| 1.3 | Day 1 · Session 3 | Define a primary metric and latency, cost and harm guardrails for an AI-ranked search test | [`D1_3_define_primary_metric.ipynb`](labs/D1_3_define_primary_metric.ipynb) |
-| 1.4 | Day 1 · Session 4 | Size the search test by simulation on revenue per user and compare with the textbook formula | [`D1_4_size_search_test.ipynb`](labs/D1_4_size_search_test.ipynb) |
-| 2.1 | Day 2 · Session 1 | Measure how capping order value changes variance and bias | [`D2_1_measure_how_capping.ipynb`](labs/D2_1_measure_how_capping.ipynb) |
-| 2.2 | Day 2 · Session 2 | Adjust for pre-period behaviour and report the reduction in interval width | [`D2_2_adjust_pre_period.ipynb`](labs/D2_2_adjust_pre_period.ipynb) |
-| 2.3 | Day 2 · Session 3 | Compute a delta-method interval for orders per session and check it by bootstrap | [`D2_3_compute_delta_method.ipynb`](labs/D2_3_compute_delta_method.ipynb) |
-| 2.4 | Day 2 · Session 4 | Estimate a city-stratified test with and without post-stratification | [`D2_4_estimate_city_stratified.ipynb`](labs/D2_4_estimate_city_stratified.ipynb) |
-| 3.1 | Day 3 · Session 1 | Add group sequential boundaries to the daily-peeking simulator and measure the false-positive rate | [`D3_1_add_group_sequential.ipynb`](labs/D3_1_add_group_sequential.ipynb) |
-| 3.2 | Day 3 · Session 2 | Run an always-valid sequential test on the same simulator and compare stopping times | [`D3_2_run_always_valid.ipynb`](labs/D3_2_run_always_valid.ipynb) |
-| 3.3 | Day 3 · Session 3 | Measure the bias of a customer-randomised dispatch test | [`D3_3_measure_bias_customer.ipynb`](labs/D3_3_measure_bias_customer.ipynb) |
-| 3.4 | Day 3 · Session 4 | Design a city-by-hour switchback and simulate its power | [`D3_4_design_city_hour.ipynb`](labs/D3_4_design_city_hour.ipynb) |
-| 4.1 | Day 4 · Session 1 | Analyse a chat-assistant test with latency, cost and complaint guardrails | [`D4_1_analyse_chat_assistant.ipynb`](labs/D4_1_analyse_chat_assistant.ipynb) |
-| 4.2 | Day 4 · Session 2 | Correct 20 segment results for false discoveries and report what survives | [`D4_2_correct_20_segment.ipynb`](labs/D4_2_correct_20_segment.ipynb) |
-| 4.3 | Day 4 · Session 3 | Draft a one-page launch recommendation with effect, interval and guardrails | [`D4_3_draft_one_page.ipynb`](labs/D4_3_draft_one_page.ipynb) |
-| 4.4 | Day 4 · Session 4 | Decide two seeded write-ups and choose the capstone change | [`D4_4_decide_two_seeded.ipynb`](labs/D4_4_decide_two_seeded.ipynb) |
+| 1.1 | Day 1 · Session 1 | Triggered and diluted effects in SQL | [`D1_1_triggered_exposure.ipynb`](labs/D1_1_triggered_exposure.ipynb) |
+| 1.2 | Day 1 · Session 2 | Sample ratio and A/A checks | [`D1_2_srm_aa_checks.ipynb`](labs/D1_2_srm_aa_checks.ipynb) |
+| 1.3 | Day 1 · Session 3 | A metric spec for AI-ranked search | [`D1_3_ai_search_metrics.ipynb`](labs/D1_3_ai_search_metrics.ipynb) |
+| 1.4 | Day 1 · Session 4 | Power by simulation for the search test | [`D1_4_power_heavy_tails.ipynb`](labs/D1_4_power_heavy_tails.ipynb) |
+| 2.1 | Day 2 · Session 1 | Capping order value | [`D2_1_capping.ipynb`](labs/D2_1_capping.ipynb) |
+| 2.2 | Day 2 · Session 2 | Regression adjustment with 28 pre-period days | [`D2_2_cuped.ipynb`](labs/D2_2_cuped.ipynb) |
+| 2.3 | Day 2 · Session 3 | Orders per session: delta method and bootstrap | [`D2_3_delta_method.ipynb`](labs/D2_3_delta_method.ipynb) |
+| 2.4 | Day 2 · Session 4 | City strata in the search test | [`D2_4_stratification.ipynb`](labs/D2_4_stratification.ipynb) |
+| 3.1 | Day 3 · Session 1 | Group sequential boundaries | [`D3_1_group_sequential.ipynb`](labs/D3_1_group_sequential.ipynb) |
+| 3.2 | Day 3 · Session 2 | An always-valid test on the same simulator | [`D3_2_always_valid.ipynb`](labs/D3_2_always_valid.ipynb) |
+| 3.3 | Day 3 · Session 3 | The bias of a customer-randomised dispatch test | [`D3_3_courier_interference.ipynb`](labs/D3_3_courier_interference.ipynb) |
+| 3.4 | Day 3 · Session 4 | A city-by-hour switchback and its power | [`D3_4_switchback_power.ipynb`](labs/D3_4_switchback_power.ipynb) |
+| 4.1 | Day 4 · Session 1 | The Luqma chat-assistant test | [`D4_1_chat_assistant_test.ipynb`](labs/D4_1_chat_assistant_test.ipynb) |
+| 4.2 | Day 4 · Session 2 | Twenty segment results, corrected | [`D4_2_segment_fdr.ipynb`](labs/D4_2_segment_fdr.ipynb) |
+| 4.3 | Day 4 · Session 3 | A one-page recommendation for T-101 | [`D4_3_launch_recommendation.ipynb`](labs/D4_3_launch_recommendation.ipynb) |
+| 4.4 | Day 4 · Session 4 | Two write-ups, and the capstone change | [`D4_4_review_board.ipynb`](labs/D4_4_review_board.ipynb) |
 <!-- /academy:labs -->
 
 ## Capstone
@@ -92,7 +92,32 @@ Each line is a capability; the examples are interchangeable.
 <!-- academy:sources -->
 ## Sources
 
-- REPLACE: every source the course cites, with its address, in course.json under "sources"; this list is written from there
+### National references
+
+- [Personal Data Protection Law (SDAIA)](https://sdaia.gov.sa/en/SDAIA/about/Documents/PersonalDataProtectionLaw.pdf)
+- [Implementing Regulation of the Personal Data Protection Law (SDAIA)](https://sdaia.gov.sa/en/SDAIA/about/Documents/ImplementingRegulationPersonalDataProtectionLaw.pdf)
+- [Data Classification Policy (National Data Management Office, SDAIA)](https://sdaia.gov.sa/en/SDAIA/about/Documents/DataClassificationPolicy.pdf)
+- [AI Ethics Principles (SDAIA)](https://sdaia.gov.sa/en/SDAIA/about/Documents/ai-principles.pdf)
+- [Generative AI Guidelines for Government (SDAIA)](https://sdaia.gov.sa/en/SDAIA/about/Files/GenAIGuidelinesForGovernmentENCompressed.pdf)
+- [Generative AI Guidelines for the Public (SDAIA)](https://sdaia.gov.sa/en/SDAIA/about/Files/GenerativeAIPublicEN.pdf)
+
+### Methods
+
+- [Deng, Xu, Kohavi, Walker (2013). Improving the sensitivity of online controlled experiments by utilizing pre-experiment data (CUPED)](https://exp-platform.com/Documents/2013-02-CUPED-ImprovingSensitivityOfControlledExperiments.pdf)
+- [Deng, Knoblich, Lu (2018). Applying the delta method in metric analytics](https://arxiv.org/abs/1803.06336)
+- [Johari, Pekelis, Walsh. Always valid inference: bringing sequential analysis to A/B testing](https://arxiv.org/abs/1512.04922)
+- [Bojinov, Simchi-Levi, Zhao. Design and analysis of switchback experiments](https://arxiv.org/abs/2009.00148)
+- [Kohavi, Tang, Xu. Trustworthy Online Controlled Experiments (the book's site)](https://experimentguide.com/)
+
+### Platforms and libraries
+
+- [GrowthBook documentation: CUPED](https://docs.growthbook.io/statistics/cuped)
+- [GrowthBook documentation: sequential testing](https://docs.growthbook.io/statistics/sequential)
+- [GrowthBook documentation: multiple testing corrections](https://docs.growthbook.io/statistics/multiple-corrections)
+- [Spotify Engineering (2023). Choosing a sequential testing framework](https://engineering.atspotify.com/2023/03/choosing-sequential-testing-framework-comparisons-and-discussions)
+- [statsmodels: multipletests](https://www.statsmodels.org/stable/generated/statsmodels.stats.multitest.multipletests.html)
+- [SciPy: scipy.stats.chisquare](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chisquare.html)
+- [DuckDB documentation](https://duckdb.org/docs/stable/)
 <!-- /academy:sources -->
 
 ### National references
