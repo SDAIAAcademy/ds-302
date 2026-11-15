@@ -1,0 +1,441 @@
+{
+  "$schema": "https://sdaiaacademy.github.io/engine/schemas/course.schema.json",
+  "engine": "1",
+  "id": "online-experiments",
+  "code": "DS-302",
+  "version": "2027.1.0",
+  "lang": "en",
+  "title": {
+    "en": "Online Experiments and A/B Testing",
+    "ar": "التجارب عبر الإنترنت واختبارات أ/ب"
+  },
+  "tagline": "REPLACE: one line under the title: what participants can do after the course",
+  "description": "Participants run the statistics behind an experimentation programme that includes tests of AI features. On a synthetic event stream from Sufrah, a fictional food-delivery marketplace, they check tests for trust problems, analyse triggered exposure, reduce variance with pre-experiment data, compute intervals for ratio metrics, design sequential tests for daily monitoring, set guardrails for latency, cost and harm, and measure interference through shared couriers, ending on a mock review board that decides launch, iterate or stop.",
+  "track": "data-science",
+  "level": 300,
+  "badge": {
+    "name": "Data Science",
+    "level": "Associate"
+  },
+  "audience": "Specialists. Analysts and data scientists who have completed the level 200 set or can show equivalent work: an analysis or model they built, validated and can explain.",
+  "prerequisites": [
+    "DS-201 Statistical Inference by Simulation",
+    "DS-205 Designing and Reading Experiments",
+    "Writes SQL with joins and window functions over event logs"
+  ],
+  "site": {
+    "url": "https://sdaiaacademy.github.io/online-experiments/",
+    "repo": "SDAIAAcademy/online-experiments"
+  },
+  "outcomes": [
+    {
+      "id": "LO1",
+      "text": "Apply regression adjustment with pre-experiment data and report the sample-size saving, given a test with 28 days of pre-period data per customer",
+      "level": "Applied",
+      "evidence": "unadjusted and adjusted intervals with the effective sample-size gain"
+    },
+    {
+      "id": "LO2",
+      "text": "Compute intervals for ratio metrics with the delta method and with a bootstrap over the randomisation unit, given order-level logs from a customer-randomised test",
+      "level": "Applied",
+      "evidence": "two agreeing intervals and a note on why the naive one is too narrow"
+    },
+    {
+      "id": "LO3",
+      "text": "Implement group sequential and always-valid tests and measure their false-positive rates under daily monitoring by simulation, given a simulator with and without a true effect",
+      "level": "Applied",
+      "evidence": "error rates at or below the nominal level, with expected stopping times"
+    },
+    {
+      "id": "LO4",
+      "text": "Design the metric set, power and decision rule for launching an AI feature, given a proposed AI-ranked search change with goals and expected traffic",
+      "level": "Performance",
+      "evidence": "a pre-registration with guardrail thresholds, sample size and a written decision rule"
+    },
+    {
+      "id": "LO5",
+      "text": "Diagnose interference in a marketplace test and design a cluster or switchback alternative with its power, given a simulator in which treated customers take couriers from control customers",
+      "level": "Performance",
+      "evidence": "a memo quantifying the naive bias and the power of the new design"
+    },
+    {
+      "id": "LO6",
+      "text": "Review experiment write-ups and decide launch, iterate or stop for each, given five write-ups with seeded faults such as sample ratio mismatch, peeking and novelty decay",
+      "level": "Performance",
+      "evidence": "a review log scored against reference decisions"
+    }
+  ],
+  "case_study": {
+    "name": "REPLACE: the name of the fictional organisation every lab works on",
+    "summary": "REPLACE: two sentences on the case study and its synthetic data"
+  },
+  "format": "intensive",
+  "format_note": "Intensive: 4 teaching days of four sessions and a capstone day, with guided pre-work and a tracked follow-up task",
+  "hours": {
+    "instruction": 6,
+    "lab": 7,
+    "guided_self_study": 6,
+    "assessment": 1,
+    "capstone": 6
+  },
+  "unit": "day",
+  "days": [
+    {
+      "id": "day1",
+      "kind": "day",
+      "title": "Trustworthy experiments",
+      "deck": "slides/day1.html",
+      "sessions": [
+        {
+          "title": "Assignment, exposure and triggering",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO4"
+          ],
+          "lab": {
+            "id": "1.1",
+            "title": "Trace assignment and exposure in SQL and compare the triggered effect with the diluted overall effect",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D1_1_trace_assignment_exposure.ipynb"
+          }
+        },
+        {
+          "title": "Sample ratio mismatch and A/A tests",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO6"
+          ],
+          "lab": {
+            "id": "1.2",
+            "title": "Run A/A and sample ratio checks on three tests and name the faulty one",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D1_2_run_sample_ratio.ipynb"
+          }
+        },
+        {
+          "title": "Metrics for AI features",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO4"
+          ],
+          "lab": {
+            "id": "1.3",
+            "title": "Define a primary metric and latency, cost and harm guardrails for an AI-ranked search test",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D1_3_define_primary_metric.ipynb"
+          }
+        },
+        {
+          "title": "Power for heavy-tailed metrics",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO4"
+          ],
+          "lab": {
+            "id": "1.4",
+            "title": "Size the search test by simulation on revenue per user and compare with the textbook formula",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D1_4_size_search_test.ipynb"
+          }
+        }
+      ]
+    },
+    {
+      "id": "day2",
+      "kind": "day",
+      "title": "Precision",
+      "deck": "slides/day2.html",
+      "sessions": [
+        {
+          "title": "Variance and heavy tails",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO1"
+          ],
+          "lab": {
+            "id": "2.1",
+            "title": "Measure how capping order value changes variance and bias",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D2_1_measure_how_capping.ipynb"
+          }
+        },
+        {
+          "title": "Regression adjustment",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO1"
+          ],
+          "lab": {
+            "id": "2.2",
+            "title": "Adjust for pre-period behaviour and report the reduction in interval width",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D2_2_adjust_pre_period.ipynb"
+          }
+        },
+        {
+          "title": "Ratio metrics",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO2"
+          ],
+          "lab": {
+            "id": "2.3",
+            "title": "Compute a delta-method interval for orders per session and check it by bootstrap",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D2_3_compute_delta_method.ipynb"
+          }
+        },
+        {
+          "title": "Stratification",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO1"
+          ],
+          "lab": {
+            "id": "2.4",
+            "title": "Estimate a city-stratified test with and without post-stratification",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D2_4_estimate_city_stratified.ipynb"
+          }
+        }
+      ]
+    },
+    {
+      "id": "day3",
+      "kind": "day",
+      "title": "Monitoring and interference",
+      "deck": "slides/day3.html",
+      "sessions": [
+        {
+          "title": "Group sequential designs",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO3"
+          ],
+          "lab": {
+            "id": "3.1",
+            "title": "Add group sequential boundaries to the daily-peeking simulator and measure the false-positive rate",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D3_1_add_group_sequential.ipynb"
+          }
+        },
+        {
+          "title": "Always-valid tests",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO3"
+          ],
+          "lab": {
+            "id": "3.2",
+            "title": "Run an always-valid sequential test on the same simulator and compare stopping times",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D3_2_run_always_valid.ipynb"
+          }
+        },
+        {
+          "title": "Interference in marketplaces",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO5"
+          ],
+          "lab": {
+            "id": "3.3",
+            "title": "Measure the bias of a customer-randomised dispatch test",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D3_3_measure_bias_customer.ipynb"
+          }
+        },
+        {
+          "title": "Cluster and switchback designs",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO5"
+          ],
+          "lab": {
+            "id": "3.4",
+            "title": "Design a city-by-hour switchback and simulate its power",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D3_4_design_city_hour.ipynb"
+          }
+        }
+      ]
+    },
+    {
+      "id": "day4",
+      "kind": "day",
+      "title": "Decide and review",
+      "deck": "slides/day4.html",
+      "sessions": [
+        {
+          "title": "Testing AI features",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO4"
+          ],
+          "lab": {
+            "id": "4.1",
+            "title": "Analyse a chat-assistant test with latency, cost and complaint guardrails",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D4_1_analyse_chat_assistant.ipynb"
+          }
+        },
+        {
+          "title": "Many segments",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO6"
+          ],
+          "lab": {
+            "id": "4.2",
+            "title": "Correct 20 segment results for false discoveries and report what survives",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D4_2_correct_20_segment.ipynb"
+          }
+        },
+        {
+          "title": "Writing the recommendation",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO6"
+          ],
+          "lab": {
+            "id": "4.3",
+            "title": "Draft a one-page launch recommendation with effect, interval and guardrails",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D4_3_draft_one_page.ipynb"
+          }
+        },
+        {
+          "title": "The review board",
+          "outcomes": [
+            "REPLACE: what a participant can do after this session"
+          ],
+          "lo": [
+            "LO6"
+          ],
+          "lab": {
+            "id": "4.4",
+            "title": "Decide two seeded write-ups and choose the capstone change",
+            "summary": "REPLACE: one line on what participants build and take away; then list the steps of the lab in course.json, their minutes adding up to 25",
+            "minutes": 25,
+            "href": "D4_4_decide_two_seeded.ipynb"
+          }
+        }
+      ]
+    },
+    {
+      "id": "capstone",
+      "kind": "capstone",
+      "title": "Capstone project presentations",
+      "deck": "slides/capstone.html",
+      "subtitle": "REPLACE: the catalog gives 10 minutes for each presentation and nothing about questions; decide whether the questions are inside those minutes, set capstone.talk_minutes and capstone.qa_minutes in course.json and the timers of the now-presenting slide, and remove this line"
+    }
+  ],
+  "capstone": {
+    "summary": "A design and analysis pack for an AI-feature change (pre-registration, sequential plan, guardrails, variance-reduced analysis, launch recommendation) in a public repository, defended in a ten-minute review-board session",
+    "submission": "REPLACE: what participants submit and how: a public repository link, or a shared folder for a course without code",
+    "talk_minutes": 10,
+    "rubric": [
+      {
+        "criterion": "Design and power",
+        "weight": 25
+      },
+      {
+        "criterion": "Analysis",
+        "weight": 25
+      },
+      {
+        "criterion": "Monitoring and guardrails",
+        "weight": 20
+      },
+      {
+        "criterion": "Recommendation",
+        "weight": 20
+      },
+      {
+        "criterion": "Reproducibility",
+        "weight": 10
+      }
+    ]
+  },
+  "labs": {
+    "kind": "notebooks",
+    "base": "labs/"
+  },
+  "tools": [
+    {
+      "slot": "Analysis language and notebooks",
+      "examples": [
+        "Python with Jupyter or marimo",
+        "R with Quarto"
+      ]
+    },
+    {
+      "slot": "Analytical SQL engine over event logs",
+      "examples": [
+        "DuckDB",
+        "PostgreSQL"
+      ]
+    },
+    {
+      "slot": "Statistics and simulation",
+      "examples": [
+        "statsmodels",
+        "SciPy",
+        "NumPy"
+      ]
+    },
+    {
+      "slot": "Experimentation platform, for comparing defaults",
+      "examples": [
+        "GrowthBook",
+        "published documentation of a commercial platform such as Spotify Confidence"
+      ]
+    }
+  ]
+}
