@@ -1,7 +1,7 @@
 {
   "$schema": "https://sdaiaacademy.github.io/engine/schemas/course.schema.json",
   "engine": "1",
-  "id": "online-experiments",
+  "id": "ds-302",
   "code": "DS-302",
   "version": "2027.1.0",
   "lang": "en",
@@ -26,8 +26,8 @@
     "Setup: a laptop processor with uv, or Google Colab. No lab calls a model or downloads one. Run 00_setup_check before Day 1."
   ],
   "site": {
-    "url": "https://sdaiaacademy.github.io/online-experiments/",
-    "repo": "SDAIAAcademy/online-experiments"
+    "url": "https://sdaiaacademy.github.io/ds-302/",
+    "repo": "SDAIAAcademy/ds-302"
   },
   "outcomes": [
     {

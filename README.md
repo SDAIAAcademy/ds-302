@@ -11,7 +11,7 @@ Participants run the statistics behind an experimentation programme that include
 
 **Format:** Intensive: 4 teaching days of four sessions and a capstone day, with guided pre-work and a tracked follow-up task
 
-**Course page:** https://sdaiaacademy.github.io/online-experiments/
+**Course page:** https://sdaiaacademy.github.io/ds-302/
 <!-- /academy:title -->
 
 ## Outcomes
