@@ -7,7 +7,7 @@
   "lang": "en",
   "title": {
     "en": "Online Experiments and A/B Testing",
-    "ar": "التجارب عبر الإنترنت واختبارات أ/ب"
+    "ar": "التجارب عبر الإنترنت واختبارات A/B"
   },
   "tagline": "Run trustworthy online experiments, including tests of AI features, and defend a launch, iterate or stop decision with the right interval",
   "description": "Participants run the statistics behind an experimentation programme that includes tests of AI features. On a synthetic event stream from Sufrah, a fictional food-delivery marketplace, they check tests for trust problems, analyse triggered exposure, reduce variance with pre-experiment data, compute intervals for ratio metrics, design sequential tests for daily monitoring, set guardrails for latency, cost and harm, and measure interference through shared couriers, ending on a mock review board that decides launch, iterate or stop.",

@@ -56,7 +56,7 @@
   <div class="kicker">What the board asks</div>
   <h2>One live change, then two questions</h2>
   <div class="cols cols-2">
-    <div class="card c-navy"><h4>The live change</h4><p class="small mb0">The assessor changes the traffic (for example, halve it) or the seed. The participant reruns the power calculation and says what can still be detected and what they would change.</p></div>
+    <div class="card c-navy"><h4>The live change</h4><p class="small mb0">The assessor changes the traffic (for example, halves it) or the pre-period (for example, 14 days in place of 28). The participant reruns the power calculation and says what can still be detected and what they would change.</p></div>
     <ul class="bullets small">
       <li>"Your harm rate is lower in treatment. Is that evidence the harm is gone?"</li>
       <li>"Why this spending function, not a fixed horizon?"</li>
@@ -64,7 +64,7 @@
       <li>"What would make you stop this test on day 10?"</li>
     </ul>
   </div>
-  <aside class="notes"><p>Use one live change for everyone so the defences are comparable: halving the traffic works for all three changes. The starter takes <code>--customers</code> and <code>--seed</code>. For the adjusted-versus-raw question, the expected answer is that the pre-registered estimator decides, and both are reported.</p></aside>
+  <aside class="notes"><p>Use one live change for everyone so the defences are comparable: halving the traffic works for all three changes, and so does a 14-day pre-period, which lowers the correlation the adjustment relies on. The starter takes <code>--customers</code>, <code>--pre-days</code> and <code>--seed</code>. For the adjusted-versus-raw question, the expected answer is that the pre-registered estimator decides, and both are reported.</p></aside>
 </section>
 
 <section class="slide order" id="running-order" data-label="Running order">

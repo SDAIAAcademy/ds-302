@@ -74,7 +74,7 @@ revenue = v.groupby(orders.customer_id).sum()</code></pre>
   <h2>The 99th-percentile cap gives the smallest total error</h2>
   <table class="t">
     <tr><th>Cap</th><th class="num">Estimate</th><th class="num">Standard error</th><th class="num">True effect</th><th class="num">Bias against uncapped</th><th class="num">Root mean square error</th></tr>
-    <tr><td>none</td><td class="num">20.13</td><td class="num">5.17</td><td class="num">17.91</td><td class="num">0</td><td class="num">5.16</td></tr>
+    <tr><td>none</td><td class="num">20.13</td><td class="num">5.16</td><td class="num">17.91</td><td class="num">0</td><td class="num">5.16</td></tr>
     <tr><td>99.9th</td><td class="num">19.71</td><td class="num">4.34</td><td class="num">17.37</td><td class="num">-0.54</td><td class="num">4.37</td></tr>
     <tr class="hl"><td>99th</td><td class="num">19.11</td><td class="num">4.02</td><td class="num">16.70</td><td class="num">-1.21</td><td class="num">4.20</td></tr>
     <tr><td>95th</td><td class="num">17.92</td><td class="num">3.72</td><td class="num">15.91</td><td class="num">-1.99</td><td class="num">4.23</td></tr>

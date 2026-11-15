@@ -23,6 +23,15 @@ uv run jupyter lab
 Run `00_setup_check.ipynb` once before Day 1. On Windows, if the path of the clone is long, keep the environment
 on a short path: `set UV_PROJECT_ENVIRONMENT=C:\uvenv` before `uv sync`.
 
+## Before and after the course
+
+- **Pre-work (two hours).** Revise power and the two-sample test: what alpha and power mean, the standard error
+  of a difference in means, and the sample-size formula that Day 1 Session 4 starts from. DS-201 and DS-205 cover
+  the ground. Then take the entry quiz: the Day 1 questions on the practice page of the course site, without an
+  assistant. Run `00_setup_check.ipynb` at the end.
+- **Follow-up (tracked).** Within the period your trainer sets, review one experiment from your workplace, or a
+  public write-up, against the review board's checklist of Lab 4.4, and submit the one-page review.
+
 ## The notebooks
 
 | Unit | Session | Notebook |

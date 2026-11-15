@@ -1,7 +1,7 @@
 <!-- academy:title -->
 # Online Experiments and A/B Testing
 
-التجارب عبر الإنترنت واختبارات أ/ب
+التجارب عبر الإنترنت واختبارات A/B
 
 Data Science Track · SDAIA Academy · DS-302 · Level 300
 

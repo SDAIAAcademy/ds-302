@@ -57,7 +57,7 @@
   <h2>Customers order more, and wrong answers about food rise</h2>
   <table class="t small">
     <tr><th>Metric</th><th class="num">Old help menu</th><th class="num">Luqma</th><th>Against the plan</th></tr>
-    <tr><td>Orders per customer, 4 weeks</td><td class="num"></td><td class="num">+0.105 (+2.1%)</td><td>interval 0.034 to 0.176: above zero</td></tr>
+    <tr><td>Orders per customer, 4 weeks</td><td class="num">5.08</td><td class="num">5.19 (+2.1%)</td><td>difference +0.105, interval 0.034 to 0.176: above zero</td></tr>
     <tr><td>p95 response time</td><td class="num">0.98 s</td><td class="num">3.94 s</td><td>holds (limit 5 s)</td></tr>
     <tr><td>Cost per conversation</td><td class="num">0.00 SAR</td><td class="num">0.07 SAR</td><td>holds (limit 0.12)</td></tr>
     <tr><td>Complaints per 1,000 orders</td><td class="num">5.58</td><td class="num">6.03</td><td>upper bound +0.83: holds</td></tr>
@@ -162,11 +162,11 @@
       <div class="opt" data-why="Applies the single-test threshold to one test chosen from twenty">A win in Abha on Android, because 0.01 is below 0.05</div>
       <div class="opt" data-why="Thinks the false discovery rate is the same as the p-value of the best segment">A win with a 1% chance of being false</div>
       <div class="opt" data-why="Confuses the smallest-p threshold with a ban on segments">That segment analysis is never allowed</div>
-      <div class="opt" data-ok>No segment survives: the smallest p must be below 0.05 / 20 = 0.0025</div>
+      <div class="opt" data-ok>No segment survives: 0.01 is above its threshold, 0.05 × 1 / 20 = 0.0025</div>
     </div>
-    <div class="callout tip why"><b>Why.</b> For the smallest p-value, Benjamini-Hochberg's threshold is 0.05 × 1 / 20; 0.01 is above it, so nothing is reported.</div>
+    <div class="callout tip why"><b>Why.</b> Benjamini-Hochberg compares the k-th smallest p-value with 0.05 × k / 20. The smallest, 0.01, is above 0.0025, and no larger p-value meets its own threshold (the last one is 0.05), so nothing is reported.</div>
   </div>
-  <aside class="notes"><p>Answer: D. The rank-1 threshold of Benjamini-Hochberg equals Bonferroni's; the procedures differ only from rank 2 onward.</p></aside>
+  <aside class="notes"><p>Answer: D. The rank-1 threshold of Benjamini-Hochberg equals Bonferroni's; the procedures differ only from rank 2 onward. Had a second segment shown p = 0.004, both would survive (0.004 is below 0.05 × 2 / 20 = 0.005): the rule keeps every rank up to the largest that passes.</p></aside>
 </section>
 
 <section class="slide lab" id="lab-4-2" data-auto="lab" data-lab="4.2">

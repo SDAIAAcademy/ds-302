@@ -19,20 +19,22 @@ Use the course's synthetic data only. No personal data and no data from your wor
 
 ## The data
 
-`sufrah.capstone_data(change, seed=None, n=None)` generates the test, and reruns identically for the same arguments:
+`sufrah.capstone_data(change, seed=None, n=None, pre_days=28)` generates the test, and reruns identically for the same arguments:
 
-- `customers`: one row per customer with `city`, `variant`, `orders_pre` and `revenue_pre` (28 days before the
-  test) and `orders` and `revenue` (28 days of the test);
+- `customers`: one row per customer with `city`, `variant`, `orders_pre` and `revenue_pre` (the `pre_days` before
+  the test, 28 unless changed) and `orders` and `revenue` (28 days of the test);
 - `daily`: new customers per day and arm, to plan the looks of a sequential design;
 - `guardrails`: one row per event with `latency_ms`, `cost_sar` and `harm_flag`.
 
-`n` is the traffic and `seed` a fresh draw; the assessor uses both in the defence. The starter writes the data to
+`n` is the traffic, `pre_days` the length of the pre-period and `seed` a fresh draw; in the defence the assessor
+changes the traffic or the pre-period. The starter writes the data to
 CSV and prints a first look:
 
 ```bash
 cd labs
 uv run python capstone/starter.py C2
 uv run python capstone/starter.py C2 --customers 80000 --seed 7
+uv run python capstone/starter.py C2 --pre-days 14
 ```
 
 The first look is a starting point, not the pack: it has no limits, no plan and no decision.
@@ -67,7 +69,7 @@ The capstone counts for 60% of the course result and you need at least 60% on th
 defence counts for 20%, and the supervised entry and exit checks for 20%. The pass mark is 70% overall.
 
 **AI policy.** AI-full: an assistant may write code with you. You defend every number live, including a power
-calculation rerun on traffic the assessor chooses.
+calculation rerun on the traffic or the pre-period the assessor chooses.
 
 ## The defence
 
@@ -75,5 +77,6 @@ Seven minutes: the change and its risk, the design and its power, the result wit
 decision. Three minutes of questions from the board, which may include:
 
 - "Halve the traffic. What can you still detect, and what would you change?"
+- "You have 14 days of pre-period data, not 28. What does the adjustment still save?"
 - "The harm rate is lower in treatment. Is that evidence the harm is gone?"
 - "Why this spending function and not a fixed horizon?"

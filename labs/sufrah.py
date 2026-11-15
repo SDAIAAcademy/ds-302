@@ -448,12 +448,12 @@ _CAPSTONE_TRUTH = {
 }
 
 
-def capstone_data(change: str, seed: int | None = None, n: int | None = None) -> dict:
+def capstone_data(change: str, seed: int | None = None, n: int | None = None, pre_days: int = DAYS) -> dict:
     """Synthetic pre-period and test data for one of the capstone changes in data/capstone_changes.json.
 
     Returns {"customers": per-customer pre and test totals and the arm, "daily": per-day totals by arm,
     "guardrails": per-event latency, cost and harm flags}. The assessor may change n (the traffic) or
-    the pre-period in the defence: pass them here.
+    pre_days (the length of the pre-period, 28 days unless changed) in the defence: pass them here.
     """
     spec = {**{c["id"]: c for c in js("capstone_changes")["changes"]}[change], **_CAPSTONE_TRUTH[change]}
     rng = np.random.default_rng(seed if seed is not None else spec["seed"])
@@ -462,7 +462,7 @@ def capstone_data(change: str, seed: int | None = None, n: int | None = None) ->
     rate = rng.gamma(0.8, CITY_RATE[city] / 0.8)
     mu = np.log(CITY_VALUE[city]) + 0.35 * rng.standard_normal(n)
     treat = rng.random(n) < 0.5
-    o_pre = rng.poisson(DAYS * rate)
+    o_pre = rng.poisson(pre_days * rate)
     o_test = rng.poisson(DAYS * rate * (1 + spec["true_lift"] * treat))
     rev = lambda k: np.bincount(np.repeat(np.arange(n), k), weights=_basket_values(rng, np.repeat(mu, k)),
                                 minlength=n)
