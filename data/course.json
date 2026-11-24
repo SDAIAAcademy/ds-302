@@ -2,9 +2,9 @@
   "v": 1,
   "engine": "1.0.0",
   "build": {
-    "at": "2026-11-15T03:19:28Z",
-    "version": "2027.1.0",
-    "commit": "843acec"
+    "at": "2026-11-24T17:16:16Z",
+    "version": "2027.2.0",
+    "commit": "f479981"
   },
   "lang": "en",
   "dir": "ltr",
@@ -15,7 +15,7 @@
   "course": {
     "id": "ds-302",
     "code": "DS-302",
-    "version": "2027.1.0",
+    "version": "2027.2.0",
     "title": "Online Experiments and A/B Testing",
     "tagline": "Run trustworthy online experiments, including tests of AI features, and defend a launch, iterate or stop decision with the right interval",
     "description": "Participants run the statistics behind an experimentation programme that includes tests of AI features. On a synthetic event stream from Sufrah, a fictional food-delivery marketplace, they check tests for trust problems, analyse triggered exposure, reduce variance with pre-experiment data, compute intervals for ratio metrics, design sequential tests for daily monitoring, set guardrails for latency, cost and harm, and measure interference through shared couriers, ending on a mock review board that decides launch, iterate or stop.",

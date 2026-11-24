@@ -1,7 +1,7 @@
 ---
 course: "Online Experiments and A/B Testing"
 code: "DS-302"
-version: "2027.1.0"
+version: "2027.2.0"
 deck: "day2"
 day: 2
 language: "en"

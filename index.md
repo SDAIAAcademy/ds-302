@@ -1,7 +1,7 @@
 ---
 course: "Online Experiments and A/B Testing"
 code: "DS-302"
-version: "2027.1.0"
+version: "2027.2.0"
 language: "en"
 view: "trainee"
 source: "https://sdaiaacademy.github.io/ds-302/index.html"
@@ -202,4 +202,4 @@ A design and analysis pack for an AI-feature change (pre-registration, sequentia
 
 SDAIA Academy · Data Science Track · Online Experiments and A/B Testing
 
-Course version 2027.1.0 · engine 1.0.0 · built 2026-11-15 · commit 843acec
+Course version 2027.2.0 · engine 1.0.0 · built 2026-11-24 · commit f479981

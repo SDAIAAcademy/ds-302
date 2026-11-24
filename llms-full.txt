@@ -1,7 +1,7 @@
 ---
 course: "Online Experiments and A/B Testing"
 code: "DS-302"
-version: "2027.1.0"
+version: "2027.2.0"
 scope: "course"
 language: "en"
 view: "trainee"
@@ -1382,6 +1382,41 @@ Data Science Track · 4 teaching days + capstone day · 4 sessions · 4 labs · 
 
 > **What goes wrong.** Reporting the four-week average, +2.1%, as the long-run effect. Weeks 3 and 4 have intervals that include zero.
 
+#### [day4#holdout-idea] A persistent holdout measures what the launches still deliver months later
+
+*After the launch*
+
+- At the start of a quarter, 10% of customers stay on the current app for six months.
+- Every feature that wins its 14-day test ships to the other 90%.
+- Each month: orders per customer, launched group against holdout, adjusted with the 28 days before the quarter (Lab 2.2).
+
+- **What it answers.** The combined, settled effect of everything launched: after novelty fades, with the features competing for the same orders.
+
+> **Sufrah's rules.** Share, length and metric fixed before the quarter. Nobody moves in or out. Harm fixes, such as an allergen checker, reach the holdout too.
+
+#### [day4#holdout-read] Four test wins add up to +5.0%; the holdout settles below +2%
+
+*One quarter of launches, read from the holdout*
+
+| Feature, 14-day test | Lift |
+| --- | --- |
+| Spice-level labels | +2.0% |
+| Delivery-time estimates | +1.1% |
+| Saved baskets | +1.0% |
+| Cuisine filters | +0.9% |
+| Sum of the wins | +5.0% |
+
+| Month | Launched over holdout | 95% interval |
+| --- | --- | --- |
+| 1 | +1.9% | 1.0 to 2.8 |
+| 2 | +1.8% | 0.9 to 2.7 |
+| 3 | +2.2% | 1.3 to 3.1 |
+| 4 | +1.9% | 1.0 to 2.8 |
+| 5 | +1.6% | 0.7 to 2.5 |
+| 6 | +1.5% | 0.6 to 2.4 |
+
+> **Decision.** Report +1.5% (0.6% to 2.4%) as what the quarter delivers, and plan on it, not on +5.0%. Each test answered its own 14-day question; none was wrong.
+
 #### [day4#harm-overrides] The rule says stop, and it would say so with any lift
 
 *Lab 4.1, step 5*
@@ -1580,7 +1615,7 @@ Draft a one-page launch recommendation for the AI-ranked search test with effect
 
 1. Did the split work? Sample ratio (Lab 1.2).
 2. Is the analysis the pre-registered one, at the planned time? (Labs 1.4, 3.1)
-3. Is the effect settled, or fading? (Lab 4.1)
+3. Is the effect settled, or fading? (Lab 4.1; after launch, the holdout)
 4. Did every guardrail hold, the harm guardrail above all? (Labs 1.3, 4.1)
 5. Was a segment or a metric picked after the fact? (Lab 4.2)
 

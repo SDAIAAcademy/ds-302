@@ -6,7 +6,7 @@
     "code": "DS-302",
     "title": "Online Experiments and A/B Testing",
     "lang": "en",
-    "version": "2027.1.0"
+    "version": "2027.2.0"
   },
   "questions": [
     {
@@ -1562,6 +1562,36 @@
       "day": 4,
       "session": 1,
       "level": "apply",
+      "pool": "practice",
+      "weight": 1,
+      "timer": 30
+    },
+    {
+      "id": "holdout-report",
+      "type": "single",
+      "prompt": "Sufrah's loyalty team launched three features in a half-year, each after a 14-day test: +1.6%, +1.1% and +1.1% in orders per customer. A 10% holdout kept on the old app reads, launched over holdout: +0.9%, +0.9%, +1.1%, +0.4% (interval -0.5% to +1.2%), +1.0%, and +1.1% (interval 0.2% to 2.0%) in month six. What should the team report as the long-run effect of the three launches?",
+      "options": [
+        "+3.8%, the sum of the three 14-day test wins, each of them significant",
+        "No lasting effect: the month-four interval includes zero",
+        "+1.1%, the holdout's month-six reading, interval 0.2% to 2.0%",
+        "+1.3%, the mean of the three test wins"
+      ],
+      "correct": [
+        2
+      ],
+      "explanation": "Short tests include novelty and do not add up; the holdout measures the combined, settled effect, and its later months agree with each other.",
+      "misconceptions": [
+        "Adds short-test wins as if each lasts and none overlaps",
+        "Judges a steady series by its one noisy month",
+        "",
+        "Averages per-feature test lifts instead of measuring the combined launch"
+      ],
+      "lo": [
+        "LO4"
+      ],
+      "day": 4,
+      "session": 1,
+      "level": "analyze",
       "pool": "practice",
       "weight": 1,
       "timer": 30

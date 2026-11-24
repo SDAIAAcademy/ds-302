@@ -2,9 +2,9 @@
   "v": 1,
   "engine": "1.0.0",
   "build": {
-    "at": "2026-11-15T03:19:28Z",
-    "version": "2027.1.0",
-    "commit": "843acec"
+    "at": "2026-11-24T17:16:16Z",
+    "version": "2027.2.0",
+    "commit": "f479981"
   },
   "lang": "en",
   "dir": "ltr",
@@ -1055,8 +1055,26 @@
     },
     {
       "deck": "day4",
-      "id": "harm-overrides",
+      "id": "holdout-idea",
       "n": 9,
+      "session": 1,
+      "title": "A persistent holdout measures what the launches still deliver months later",
+      "text": "After the launch A persistent holdout measures what the launches still deliver months later At the start of a quarter, 10% of customers stay on the current app for six months. Every feature that wins its 14-day test ships to the other 90%. Each month: orders per customer, launched group against holdout, adjusted with the 28 days before the quarter (Lab 2.2). What it answers The combined, settled effect of everything launched: after novelty fades, with the features competing for the same orders. Sufrah's rules. Share, length and metric fixed before the quarter. Nobody moves in or out. Harm fixes, such as an allergen checker, reach the holdout too.",
+      "href": "../slides/day4.html#holdout-idea"
+    },
+    {
+      "deck": "day4",
+      "id": "holdout-read",
+      "n": 10,
+      "session": 1,
+      "title": "Four test wins add up to +5.0%; the holdout settles below +2%",
+      "text": "One quarter of launches, read from the holdout Four test wins add up to +5.0%; the holdout settles below +2% Feature, 14-day test Lift Spice-level labels +2.0% Delivery-time estimates +1.1% Saved baskets +1.0% Cuisine filters +0.9% Sum of the wins +5.0% Month Launched over holdout 95% interval 1 +1.9% 1.0 to 2.8 2 +1.8% 0.9 to 2.7 3 +2.2% 1.3 to 3.1 4 +1.9% 1.0 to 2.8 5 +1.6% 0.7 to 2.5 6 +1.5% 0.6 to 2.4 Decision. Report +1.5% (0.6% to 2.4%) as what the quarter delivers, and plan on it, not on +5.0%. Each test answered its own 14-day question; none was wrong.",
+      "href": "../slides/day4.html#holdout-read"
+    },
+    {
+      "deck": "day4",
+      "id": "harm-overrides",
+      "n": 11,
       "session": 1,
       "title": "The rule says stop, and it would say so with any lift",
       "text": "Lab 4.1, step 5 The rule says stop, and it would say so with any lift 1 · Harm guardrail Fails: +0.81 per 1,000, upper bound +1.02 → 2 · The rule Stop, before reading the primary → 3 · What next Fix the cause: capstone change C2 adds an allergen checker Takeaway. A harm guardrail is judged on its upper bound: the test must show the harm is below the limit, not merely fail to show it is above.",
@@ -1065,7 +1083,7 @@
     {
       "deck": "day4",
       "id": "check-harm",
-      "n": 10,
+      "n": 12,
       "session": 1,
       "title": "The harm estimate is small. Is that enough?",
       "text": "Checkpoint The harm estimate is small. Is that enough? A new AI menu search raises allergen complaints by +0.10 per 1,000 orders, 95% interval -0.20 to +0.40. The pre-registered limit is +0.30 on the upper bound. What does the rule say? It holds: the difference is not significantly above zero It fails: the upper bound, +0.40, is above the limit It holds: the estimate, +0.10, is below the limit It cannot be judged without a longer test",
@@ -1074,7 +1092,7 @@
     {
       "deck": "day4",
       "id": "lab-4-1",
-      "n": 11,
+      "n": 13,
       "session": 1,
       "title": "The Luqma chat-assistant test",
       "text": "Lab 4.1 · 25 min The Luqma chat-assistant test Analyse a chat-assistant test with latency, cost and complaint guardrails, check the lift week by week and apply the harm rule. D4_1_chat_assistant_test.ipynb The primary metric with its interval 5 min Latency and cost guardrails 5 min Complaints and wrong-information complaints 6 min The lift by week: novelty 5 min The decision and its reason 4 min ✱ Stretch: Find the city where the harm is largest and say what you would ask the Luqma team",
@@ -1083,7 +1101,7 @@
     {
       "deck": "day4",
       "id": "s2",
-      "n": 12,
+      "n": 14,
       "session": 2,
       "title": "Many segments",
       "text": "Session 2 Many segments Compute how many false wins 20 uncorrected tests produce Apply Holm and Benjamini-Hochberg corrections Report the segments that survive and what that means for the decision 02",
@@ -1092,7 +1110,7 @@
     {
       "deck": "day4",
       "id": "twenty-segments",
-      "n": 13,
+      "n": 15,
       "session": 2,
       "title": "Twenty cuisine segments, four of them \"significant\"",
       "text": "Lab 4.2 · the case Twenty cuisine segments, four of them \"significant\" T-205 added photos to menus. Overall: a small lift. The team cut the result by the cuisine of each customer's favourite restaurant: 20 segments. Below 0.05: Mandi (p = 0.00001), Coffee (0.001), Indian (0.040, a drop), Desserts (0.049). 64% of 20-test analyses with no effect anywhere show at least one p below 0.05; 1.0 false win on average",
@@ -1101,7 +1119,7 @@
     {
       "deck": "day4",
       "id": "fwer-vs-fdr",
-      "n": 14,
+      "n": 16,
       "session": 2,
       "title": "Control the chance of any false win, or the share of false wins you report",
       "text": "Two error rates to control Control the chance of any false win, or the share of false wins you report Family-wise error: Bonferroni, Holm The chance of even one false win stays at 5%. Bonferroni tests each p against 0.05 / 20 = 0.0025; Holm steps down from the smallest p and never rejects less. False discovery rate: Benjamini-Hochberg Among the segments you report, the expected share of false ones stays at 5%. Sort the p-values; keep the largest k with p(k) ≤ 0.05 k / 20. On the platforms. GrowthBook's documentation offers Holm-Bonferroni and Benjamini-Hochberg corrections for many metrics or many variations.",
@@ -1110,7 +1128,7 @@
     {
       "deck": "day4",
       "id": "what-survives",
-      "n": 15,
+      "n": 17,
       "session": 2,
       "title": "Two segments survive every correction; two are chance",
       "text": "Lab 4.2, steps 3 to 5 Two segments survive every correction; two are chance Segment Difference p Bonferroni Holm Benjamini-Hochberg Mandi +0.449 0.00001 kept kept kept Coffee +0.317 0.0010 kept kept kept Indian -0.145 0.040 dropped dropped dropped Desserts +0.137 0.049 dropped dropped dropped What a survivor earns. A new test, pre-registered on that segment. Not a launch.",
@@ -1119,7 +1137,7 @@
     {
       "deck": "day4",
       "id": "check-segments",
-      "n": 16,
+      "n": 18,
       "session": 2,
       "title": "A segment with p = 0.01",
       "text": "Checkpoint A segment with p = 0.01 Ruba cut a test into 20 city-and-platform segments. One, Abha on Android, has p = 0.01; the other nineteen are above 0.2. With Benjamini-Hochberg at 5%, what does she report? A win in Abha on Android, because 0.01 is below 0.05 A win with a 1% chance of being false That segment analysis is never allowed No segment survives: 0.01 is above its threshold, 0.05 × 1 / 20 = 0.0025",
@@ -1128,7 +1146,7 @@
     {
       "deck": "day4",
       "id": "lab-4-2",
-      "n": 17,
+      "n": 19,
       "session": 2,
       "title": "Twenty segment results, corrected",
       "text": "Lab 4.2 · 25 min Twenty segment results, corrected Correct 20 segment results for false discoveries and report what survives. D4_2_segment_fdr.ipynb Twenty z-tests from the segment table 5 min How many false wins by chance: simulate 5 min Bonferroni and Holm 5 min Benjamini-Hochberg 5 min What survives, in two sentences 5 min ✱ Stretch: Shrink the segment effects toward the overall effect and compare",
@@ -1137,7 +1155,7 @@
     {
       "deck": "day4",
       "id": "s3",
-      "n": 18,
+      "n": 20,
       "session": 3,
       "title": "Writing the recommendation",
       "text": "Session 3 Writing the recommendation Compute every number the pre-registration asks for Apply the written decision rule without exception Write a one-page recommendation a decision maker can act on 03",
@@ -1146,7 +1164,7 @@
     {
       "deck": "day4",
       "id": "one-page",
-      "n": 19,
+      "n": 21,
       "session": 3,
       "title": "One page, in the order the reader decides",
       "text": "The recommendation One page, in the order the reader decides 1 · Decision Launch, iterate or stop, and why, in two sentences → 2 · Effect With its interval, in units a manager uses → 3 · Guardrails Each against its pre-registered limit → 4 · Risks, next step What would change the decision; who does what Takeaway. The rule that decided is the pre-registered one, applied literally.",
@@ -1155,7 +1173,7 @@
     {
       "deck": "day4",
       "id": "t101-numbers",
-      "n": 20,
+      "n": 22,
       "session": 3,
       "title": "T-101: a clear lift, and latency beyond the limit",
       "text": "Lab 4.3, steps 2 and 3 T-101: a clear lift, and latency beyond the limit +3.5% orders per triggered customer, +0.226 (95% interval 0.179 to 0.273), adjusted with 28 pre-period days Guardrail Value Limit Search p95 latency, difference +405 ms at most 300: fails Inference cost per 1,000 searches 5.80 SAR at most 8.0: holds Complaints per 1,000, upper bound +0.36 at most 1.0: holds Revenue, lower bound, relative +1.6% at least -1%: holds",
@@ -1164,7 +1182,7 @@
     {
       "deck": "day4",
       "id": "t101-decision",
-      "n": 21,
+      "n": 23,
       "session": 3,
       "title": "The rule says iterate: a non-harm guardrail failed",
       "text": "Lab 4.3, step 4 The rule says iterate: a non-harm guardrail failed if primary[\"lo\"] <= 0 or harm_failed: return \"stop\" return \"launch\" if all_hold else \"iterate\" The primary interval is far above zero: not a stop. Latency is not the harm guardrail: not a stop. One guardrail failed: not a launch. Next step: cut p95 latency by at least 105 ms, then a 14-day confirmation. What goes wrong. \"The lift is so large that 405 ms is fine.\" That argument belonged in the pre-registration; after the test it is a moved goalpost.",
@@ -1173,7 +1191,7 @@
     {
       "deck": "day4",
       "id": "check-page",
-      "n": 22,
+      "n": 24,
       "session": 3,
       "title": "What goes first on the page?",
       "text": "Checkpoint What goes first on the page? Rawan's board reads one page per test. Ruba's draft for T-101 opens with the method, then the data, then the effect, and ends with the decision. What should she change? Put the decision and its reason first; the evidence follows Put the guardrail table first, because it decided Drop the interval and keep the point estimate Add a methods appendix to the page",
@@ -1182,7 +1200,7 @@
     {
       "deck": "day4",
       "id": "lab-4-3",
-      "n": 23,
+      "n": 25,
       "session": 3,
       "title": "A one-page recommendation for T-101",
       "text": "Lab 4.3 · 25 min A one-page recommendation for T-101 Draft a one-page launch recommendation for the AI-ranked search test with effect, interval and guardrails, from its pre-registration. D4_3_launch_recommendation.ipynb Read the pre-registration 3 min The primary effect, adjusted, with its interval 6 min The four guardrails against their thresholds 6 min Apply the decision rule 4 min Write and save the one page 6 min ✱ Stretch: Add the effect in Riyadh only and say why it does not change the decision",
@@ -1191,7 +1209,7 @@
     {
       "deck": "day4",
       "id": "s4",
-      "n": 24,
+      "n": 26,
       "session": 4,
       "title": "The review board",
       "text": "Session 4 The review board Check a write-up for sample ratio mismatch, peeking and novelty Decide launch, iterate or stop with a stated reason Choose and scope the capstone change 04",
@@ -1200,16 +1218,16 @@
     {
       "deck": "day4",
       "id": "board-checklist",
-      "n": 25,
+      "n": 27,
       "session": 4,
       "title": "Read for faults before you read the result",
-      "text": "The review board Read for faults before you read the result Did the split work? Sample ratio (Lab 1.2). Is the analysis the pre-registered one, at the planned time? (Labs 1.4, 3.1) Is the effect settled, or fading? (Lab 4.1) Did every guardrail hold, the harm guardrail above all? (Labs 1.3, 4.1) Was a segment or a metric picked after the fact? (Lab 4.2) Why this order. A fault early in the list makes every later number suspect.",
+      "text": "The review board Read for faults before you read the result Did the split work? Sample ratio (Lab 1.2). Is the analysis the pre-registered one, at the planned time? (Labs 1.4, 3.1) Is the effect settled, or fading? (Lab 4.1; after launch, the holdout) Did every guardrail hold, the harm guardrail above all? (Labs 1.3, 4.1) Was a segment or a metric picked after the fact? (Lab 4.2) Why this order. A fault early in the list makes every later number suspect.",
       "href": "../slides/day4.html#board-checklist"
     },
     {
       "deck": "day4",
       "id": "w1-w2",
-      "n": 26,
+      "n": 28,
       "session": 4,
       "title": "W1 fails on the split; W2 fails on the timing",
       "text": "Lab 4.4, steps 2 and 3 W1 fails on the split; W2 fails on the timing W1 · One-tap reorder banner +2.1%, interval 0.9% to 3.3%. Users 50,912 against 49,088: chi-square p = 8 × 10⁻⁹. Iterate: find the cause, rerun. W2 · Dish of the day carousel Stopped on day 9 at z = 2.19; the planned boundary there was 3.47. The planned day-28 analysis: z = 0.27. Stop: no effect.",
@@ -1218,7 +1236,7 @@
     {
       "deck": "day4",
       "id": "choose-capstone",
-      "n": 27,
+      "n": 29,
       "session": 4,
       "title": "Choose the capstone change, knowing what 28 days can detect",
       "text": "Lab 4.4, step 5 Choose the capstone change, knowing what 28 days can detect Change Customers Detectable lift, raw With pre-period C1 · AI-written dish descriptions 160,000 1.7% 0.85% C2 · Luqma with an allergen checker 120,000 2.0% 0.98% C3 · AI-ranked restaurant list 200,000 1.5% 0.76% 5% two-sided, 80% power, orders per customer over 28 days; the pre-period correlation is about 0.87.",
@@ -1227,7 +1245,7 @@
     {
       "deck": "day4",
       "id": "check-board",
-      "n": 28,
+      "n": 30,
       "session": 4,
       "title": "A write-up with a fading lift",
       "text": "Checkpoint A write-up with a fading lift A write-up reports +3.0% over four weeks, interval 1.6% to 4.4%, and recommends launch. Its weekly lifts are 7.1%, 2.8%, 0.9% and 0.2%, each with a standard error of 0.8 points. What does the board decide? Launch: the four-week interval is above zero Stop: the result is novelty, so there is no effect Iterate: run longer, because the settled effect is not shown to be above zero Apply Benjamini-Hochberg to the four weeks",
@@ -1236,7 +1254,7 @@
     {
       "deck": "day4",
       "id": "lab-4-4",
-      "n": 29,
+      "n": 31,
       "session": 4,
       "title": "Two write-ups, and the capstone change",
       "text": "Lab 4.4 · 25 min Two write-ups, and the capstone change Decide two seeded write-ups, score the review log against the reference decisions, and choose the capstone change. D4_4_review_board.ipynb The review checklist 3 min W1: check, decide, log 6 min W2: check, decide, log 6 min Score the log 3 min Choose the capstone change and its primary metric 7 min ✱ Stretch: Decide W3, W4 and W5",
@@ -1245,7 +1263,7 @@
     {
       "deck": "day4",
       "id": "wrap-up",
-      "n": 30,
+      "n": 32,
       "session": 4,
       "title": "Three things to keep",
       "text": "Day 4 Three things to keep Harm decides first Luqma's lift was real; the wrong-information guardrail stopped it. Correct the cuts Of four \"significant\" segments, two survived. Faults before results Sample ratio, timing, novelty, guardrails: then the effect.",
@@ -1254,7 +1272,7 @@
     {
       "deck": "day4",
       "id": "next",
-      "n": 31,
+      "n": 33,
       "session": 4,
       "title": "Next: the capstone review board",
       "text": "Capstone Next: the capstone review board Design and analyse your chosen change with U.capstone_data() Seven minutes to present, three for the board's questions The brief and the rubric are in labs/capstone/README.md",
