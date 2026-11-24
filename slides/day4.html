@@ -34,7 +34,7 @@
     <div class="card c-coral"><h4>Harm</h4><p class="small mb0">A fluent answer can be wrong: an ingredient that is not there, an allergen missed.</p></div>
   </div>
   <div class="callout note mt"><b>National reference.</b> The SDAIA Generative AI Guidelines list misinformation among the risks and ask for monitoring and human supervision of a deployed system.</div>
-  <aside class="notes"><p>The guidelines (Government and Public editions, course sources) describe risks including misinformation and inaccurate output, and expect monitoring. A harm guardrail in a pre-registration is how a test turns that expectation into a number with a limit. Ask: which of your AI features has a harm you could count?</p></aside>
+  <aside class="notes"><p>The guidelines (Government and Public editions, course sources) name misinformation and inaccurate output among the risks and expect monitoring. A harm guardrail turns that into a number with a limit.</p></aside>
 </section>
 
 <section class="slide" id="luqma-test" data-lo="LO4" data-label="T-401">
@@ -63,7 +63,7 @@
     <tr><td>Complaints per 1,000 orders</td><td class="num">5.58</td><td class="num">6.03</td><td>upper bound +0.83: holds</td></tr>
     <tr class="hl"><td>Wrong ingredient or allergen, per 1,000</td><td class="num">1.34</td><td class="num">2.15</td><td>upper bound +1.02: <b>fails</b> (limit +0.3)</td></tr>
   </table>
-  <aside class="notes"><p>Complaint rates are ratio metrics over customers, so Lab 4.1 uses the delta method of Lab 2.3. Point out escalations: 19.1% of help-menu contacts reached a human agent, 11.0% of Luqma conversations. Cheaper, and also the route by which a wrong answer reaches a customer with no person in between.</p></aside>
+  <aside class="notes"><p>Complaint rates are ratio metrics over customers, so Lab 4.1 uses the delta method of Lab 2.3. Escalations to a human agent fell from 19.1% to 11.0%: cheaper, and a wrong answer now reaches more customers with no person in between.</p></aside>
 </section>
 
 <section class="slide" id="novelty" data-lo="LO4" data-label="Novelty">
@@ -76,7 +76,48 @@
     <div class="row"><span>Week 4</span><div class="bar c-coral" style="--w:2%"></div><span class="val">-0.5%</span></div>
   </div>
   <div class="callout warn mt"><b>What goes wrong.</b> Reporting the four-week average, +2.1%, as the long-run effect. Weeks 3 and 4 have intervals that include zero.</div>
-  <aside class="notes"><p>Customers try the new thing, then go back to their habits. The settled effect is what the last weeks show. A longer test, or a holdout kept after launch, measures it. Week 4's interval is -2.2% to +1.1%.</p></aside>
+  <aside class="notes"><p>Customers try the new thing, then go back to their habits; the last weeks show the settled effect. Week 4's interval is -2.2% to +1.1%. A longer test is one answer; the next two slides show the other.</p></aside>
+</section>
+
+<section class="slide" id="holdout-idea" data-lo="LO4" data-label="Holdout">
+  <div class="kicker">After the launch</div>
+  <h2>A persistent holdout measures what the launches still deliver months later</h2>
+  <div class="cols cols-2">
+    <ul class="bullets small">
+      <li>At the start of a quarter, 10% of customers stay on the current app for six months.</li>
+      <li>Every feature that wins its 14-day test ships to the other 90%.</li>
+      <li>Each month: orders per customer, launched group against holdout, adjusted with the 28 days before the quarter (Lab 2.2).</li>
+    </ul>
+    <div class="card c-navy"><h4>What it answers</h4><p class="small mb0">The combined, settled effect of everything launched: after novelty fades, with the features competing for the same orders.</p></div>
+  </div>
+  <div class="callout warn mt"><b>Sufrah's rules.</b> Share, length and metric fixed before the quarter. Nobody moves in or out. Harm fixes, such as an allergen checker, reach the holdout too.</div>
+  <aside class="notes"><p>Why short tests overstate: novelty has not faded at day 14; a test launched because it won tends to overstate its own effect; and features compete for the same orders, so their wins do not add. The price: the holdout misses six months of improvements, and its interval is wider than a 50/50 test's. In this simulation a 10% holdout detects a combined effect of 1.3% at month six (80% power), a 5% holdout only 1.7%. Size it like any test (Lab 1.4).</p></aside>
+</section>
+
+<section class="slide" id="holdout-read" data-lo="LO4" data-label="Read the holdout">
+  <div class="kicker">One quarter of launches, read from the holdout</div>
+  <h2>Four test wins add up to +5.0%; the holdout settles below +2%</h2>
+  <div class="cols cols-2">
+    <table class="t small">
+      <tr><th>Feature, 14-day test</th><th class="num">Lift</th></tr>
+      <tr><td>Spice-level labels</td><td class="num">+2.0%</td></tr>
+      <tr><td>Delivery-time estimates</td><td class="num">+1.1%</td></tr>
+      <tr><td>Saved baskets</td><td class="num">+1.0%</td></tr>
+      <tr><td>Cuisine filters</td><td class="num">+0.9%</td></tr>
+      <tr class="hl"><td>Sum of the wins</td><td class="num">+5.0%</td></tr>
+    </table>
+    <table class="t small">
+      <tr><th>Month</th><th class="num">Launched over holdout</th><th class="num">95% interval</th></tr>
+      <tr><td>1</td><td class="num">+1.9%</td><td class="num">1.0 to 2.8</td></tr>
+      <tr><td>2</td><td class="num">+1.8%</td><td class="num">0.9 to 2.7</td></tr>
+      <tr><td>3</td><td class="num">+2.2%</td><td class="num">1.3 to 3.1</td></tr>
+      <tr><td>4</td><td class="num">+1.9%</td><td class="num">1.0 to 2.8</td></tr>
+      <tr><td>5</td><td class="num">+1.6%</td><td class="num">0.7 to 2.5</td></tr>
+      <tr class="hl"><td>6</td><td class="num">+1.5%</td><td class="num">0.6 to 2.4</td></tr>
+    </table>
+  </div>
+  <div class="callout tip mt frag"><b>Decision.</b> Report +1.5% (0.6% to 2.4%) as what the quarter delivers, and plan on it, not on +5.0%. Each test answered its own 14-day question; none was wrong.</div>
+  <aside class="notes"><p>Ask before revealing: what goes into next year's plan? Months 4 to 6 move within each other's intervals, so the effect has settled; month 3 is higher because the last launches were still new. Every number is from labs/_tools/holdout_example.py (seed 901, 200,000 customers); no lab reads it. If someone asks to stop reading the holdout once it shows a win: it is a measurement, not a stopping rule; nothing is launched or withdrawn on a monthly reading.</p></aside>
 </section>
 
 <section class="slide" id="harm-overrides" data-lo="LO4" data-label="Harm first">
@@ -88,7 +129,7 @@
     <div class="arrow frag" data-frag="c">→</div><div class="step c-teal frag" data-frag="c"><b>3 · What next</b>Fix the cause: capstone change C2 adds an allergen checker</div>
   </div>
   <div class="callout tip mt frag"><b>Takeaway.</b> A harm guardrail is judged on its upper bound: the test must show the harm is below the limit, not merely fail to show it is above.</div>
-  <aside class="notes"><p>Press once per step. A participant will say the lift is real; agree, and point at the rule. Stop does not mean never: it means this version does not ship. C2 in the capstone is the same assistant with an allergen checker.</p></aside>
+  <aside class="notes"><p>Press once per step. The lift is real; the rule still decides. Stop means this version does not ship; C2 is the same assistant with an allergen checker.</p></aside>
 </section>
 
 <section class="slide" id="check-harm" data-lo="LO4">
@@ -252,7 +293,7 @@ return "launch" if all_hold else "iterate"</code></pre>
   <ol class="bullets small">
     <li>Did the split work? Sample ratio (Lab 1.2).</li>
     <li>Is the analysis the pre-registered one, at the planned time? (Labs 1.4, 3.1)</li>
-    <li>Is the effect settled, or fading? (Lab 4.1)</li>
+    <li>Is the effect settled, or fading? (Lab 4.1; after launch, the holdout)</li>
     <li>Did every guardrail hold, the harm guardrail above all? (Labs 1.3, 4.1)</li>
     <li>Was a segment or a metric picked after the fact? (Lab 4.2)</li>
   </ol>
